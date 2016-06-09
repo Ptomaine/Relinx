@@ -1,4 +1,4 @@
-The library uses C++14 standard.
+The library uses the C++14 standard.
 
 The code was successfully tested on the following compilers:
    * MinGW / GCC 5.3.0
