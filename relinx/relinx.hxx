@@ -1252,7 +1252,7 @@ public:
         \endcode
     */
     template<typename CastType>
-    auto cast() const -> decltype(auto)
+    auto cast() const noexcept -> decltype(auto)
     {
         auto begin = transform_iterator_adapter<iterator_type, std::function<CastType(const value_type&)>>(_begin, _end, [](auto &&v){ return static_cast<CastType>(v); });
         auto end = transform_iterator_adapter<iterator_type, std::function<CastType(const value_type&)>>(_end, _end, nullptr);
@@ -1644,7 +1644,7 @@ public:
         \return A relinx_object that contains grouped elements by a key in a std::map container where values of each key is a std::vector container.
     */
     template<typename KeyFunctor>
-    auto group_by(KeyFunctor &&keyFunctor) const -> decltype(auto)
+    auto group_by(KeyFunctor &&keyFunctor) const noexcept -> decltype(auto)
     {
         using KeyType = typename std::decay<decltype(keyFunctor(value_type()))>::type;
 
@@ -1678,7 +1678,7 @@ public:
         \return A relinx_object that contains joined and grouped elements.
     */
     template<typename Container, typename ThisKeyFunctor, typename OtherKeyFunctor, typename ResultFunctor, typename CompareFunctor>
-    auto group_join(Container &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, CompareFunctor &&compareFunctor, bool leftJoin = false) const -> decltype(auto)
+    auto group_join(Container &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, CompareFunctor &&compareFunctor, bool leftJoin = false) const noexcept -> decltype(auto)
     {
         using joinIteratorType = typename std::decay<decltype(std::begin(container))>::type;
         using joinType = typename std::decay<decltype(*joinIteratorType())>::type;
@@ -1727,7 +1727,7 @@ public:
     }
 
     template<typename T, typename ThisKeyFunctor, typename OtherKeyFunctor, typename ResultFunctor, typename CompareFunctor>
-    auto group_join(std::initializer_list<T> &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, CompareFunctor &&compareFunctor, bool leftJoin = false) const -> decltype(auto)
+    auto group_join(std::initializer_list<T> &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, CompareFunctor &&compareFunctor, bool leftJoin = false) const noexcept -> decltype(auto)
     {
         return group_join<std::initializer_list<T>,
                             ThisKeyFunctor,
@@ -1757,7 +1757,7 @@ public:
         \return A relinx_object that contains joined and grouped elements.
     */
     template<typename Container, typename ThisKeyFunctor, typename OtherKeyFunctor, typename ResultFunctor>
-    auto group_join(Container &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, bool leftJoin = false) const -> decltype(auto)
+    auto group_join(Container &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, bool leftJoin = false) const noexcept -> decltype(auto)
     {
         return group_join(std::forward<Container>(container),
                     std::forward<ThisKeyFunctor>(thisKeyFunctor),
@@ -1768,7 +1768,7 @@ public:
     }
 
     template<typename T, typename ThisKeyFunctor, typename OtherKeyFunctor, typename ResultFunctor>
-    auto group_join(std::initializer_list<T> &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, bool leftJoin = false) const -> decltype(auto)
+    auto group_join(std::initializer_list<T> &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, bool leftJoin = false) const noexcept -> decltype(auto)
     {
         return group_join<std::initializer_list<T>,
                             ThisKeyFunctor,
@@ -1793,7 +1793,7 @@ public:
         \return A relinx_object that holds a set of intersected elements.
     */
     template<typename Container>
-    auto intersect_with(Container &&container, std::function<bool(const value_type&, const value_type&)> &&compareFunctor = [](auto &&a, auto &&b) { return a == b; }) const -> decltype(auto)
+    auto intersect_with(Container &&container, std::function<bool(const value_type&, const value_type&)> &&compareFunctor = [](auto &&a, auto &&b) { return a == b; }) const noexcept -> decltype(auto)
     {
         auto end_it = std::end(container);
         auto begin = intersect_iterator_adapter<iterator_type, decltype(std::begin(container)), std::function<bool(const value_type&, const value_type&)>>(_begin, _end, std::begin(container), end_it, std::forward<std::function<bool(const value_type&, const value_type&)>>(compareFunctor));
@@ -1803,7 +1803,7 @@ public:
     }
 
     template<typename T>
-    auto intersect_with(std::initializer_list<T> &&container, std::function<bool(const value_type&, const value_type&)> &&compareFunctor = [](auto &&a, auto &&b) { return a == b; }) const -> decltype(auto)
+    auto intersect_with(std::initializer_list<T> &&container, std::function<bool(const value_type&, const value_type&)> &&compareFunctor = [](auto &&a, auto &&b) { return a == b; }) const noexcept -> decltype(auto)
     {
         return intersect_with<std::initializer_list<T>>(std::forward<std::initializer_list<T>>(container), std::forward<std::function<bool(const value_type&, const value_type&)>>(compareFunctor));
     }
@@ -1824,7 +1824,7 @@ public:
         \return A relinx_object that contains joined elements.
     */
     template<typename Container, typename ThisKeyFunctor, typename OtherKeyFunctor, typename ResultFunctor, typename CompareFunctor>
-    auto join(Container &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, CompareFunctor &&compareFunctor, bool leftJoin = false) const -> decltype(auto)
+    auto join(Container &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, CompareFunctor &&compareFunctor, bool leftJoin = false) const noexcept -> decltype(auto)
     {
         using joinIteratorType = typename std::decay<decltype(std::begin(container))>::type;
         using joinType = typename std::decay<decltype(*joinIteratorType())>::type;
@@ -1873,7 +1873,7 @@ public:
     }
 
     template<typename T, typename ThisKeyFunctor, typename OtherKeyFunctor, typename ResultFunctor, typename CompareFunctor>
-    auto join(std::initializer_list<T> &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, CompareFunctor &&compareFunctor, bool leftJoin = false) const -> decltype(auto)
+    auto join(std::initializer_list<T> &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, CompareFunctor &&compareFunctor, bool leftJoin = false) const noexcept -> decltype(auto)
     {
         return join<std::initializer_list<T>,
                     ThisKeyFunctor,
@@ -1895,7 +1895,7 @@ public:
         \note See join.
     */
     template<typename Container, typename ThisKeyFunctor, typename OtherKeyFunctor, typename ResultFunctor>
-    auto join(Container &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, bool leftJoin = false) const -> decltype(auto)
+    auto join(Container &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, bool leftJoin = false) const noexcept -> decltype(auto)
     {
         return join(std::forward<Container>(container),
                     std::forward<ThisKeyFunctor>(thisKeyFunctor),
@@ -1906,7 +1906,7 @@ public:
     }
 
     template<typename T, typename ThisKeyFunctor, typename OtherKeyFunctor, typename ResultFunctor>
-    auto join(std::initializer_list<T> &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, bool leftJoin = false) const -> decltype(auto)
+    auto join(std::initializer_list<T> &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, bool leftJoin = false) const noexcept -> decltype(auto)
     {
         return join<std::initializer_list<T>,
                     ThisKeyFunctor,
@@ -1965,7 +1965,7 @@ public:
         \return defaultValue if the sequence is empty or if no elements pass the test in the predicate functor; otherwise, the last element that passes the test in the predicate functor.
     */
     template<typename ConditionFunctor>
-    auto last_or_default(ConditionFunctor &&conditionFunctor, value_type defaultValue = value_type()) const -> value_type
+    auto last_or_default(ConditionFunctor &&conditionFunctor, value_type defaultValue = value_type()) const noexcept -> value_type
     {
         iterator_type lastValueIt;
 
@@ -1980,7 +1980,7 @@ public:
 
         \return defaultValue if the source sequence is empty; otherwise, the last element in the sequence.
     */
-    auto last_or_default(value_type defaultValue = value_type()) const -> value_type
+    auto last_or_default(value_type defaultValue = value_type()) const noexcept -> value_type
     {
         return last_or_default([](auto &&) { return true; }, defaultValue);
     }
@@ -2075,7 +2075,7 @@ public:
         \endcode
     */
     template<typename ConditionFunctor>
-    auto none(ConditionFunctor &&conditionFunctor) const -> decltype(auto)
+    auto none(ConditionFunctor &&conditionFunctor) const noexcept -> decltype(auto)
     {
         return std::none_of(_begin, _end, std::forward<ConditionFunctor>(conditionFunctor));
     }
@@ -2098,7 +2098,7 @@ public:
     }
 
     template<typename SelectFunctor, typename SortFunctor>
-    auto order_by(SelectFunctor &&selectFunctor, SortFunctor &&sortFunctor) const -> decltype(auto)
+    auto order_by(SelectFunctor &&selectFunctor, SortFunctor &&sortFunctor) const noexcept -> decltype(auto)
     {
         default_container<value_type> sorted(_begin, _end);
 
@@ -2116,7 +2116,7 @@ public:
         \return A relinx_object whose elements are sorted according to a key.
     */
     template<typename SelectFunctor = std::function<value_type(const value_type&)>>
-    auto order_by(SelectFunctor &&selectFunctor = [](auto &&v) { return v; }) const -> decltype(auto)
+    auto order_by(SelectFunctor &&selectFunctor = [](auto &&v) { return v; }) const noexcept -> decltype(auto)
     {
         return order_by(std::forward<SelectFunctor>(selectFunctor), std::less<typename std::decay<decltype(selectFunctor(value_type()))>::type>());
     }
@@ -2130,7 +2130,7 @@ public:
         \return A relinx_object whose elements are sorted in descending order according to a key.
     */
     template<typename SelectFunctor = std::function<value_type(const value_type&)>>
-    auto order_by_descending(SelectFunctor &&selectFunctor = [](auto &&v) { return v; }) const -> decltype(auto)
+    auto order_by_descending(SelectFunctor &&selectFunctor = [](auto &&v) { return v; }) const noexcept -> decltype(auto)
     {
         return order_by(std::forward<SelectFunctor>(selectFunctor), std::greater<typename std::decay<decltype(selectFunctor(value_type()))>::type>());
     }
@@ -2141,7 +2141,7 @@ public:
 
         \return A sequence whose elements correspond to those of the input sequence in reverse order.
     */
-    auto reverse() const -> decltype(auto)
+    auto reverse() const noexcept -> decltype(auto)
     {
         default_container<value_type> c(_begin, _end);
 
@@ -2170,7 +2170,7 @@ public:
         \return An relinx_object whose elements are the result of invoking the transform functor on each element of source.
     */
     template<typename TransformFunctor>
-    auto select(TransformFunctor &&transformFunctor) const -> decltype(auto)
+    auto select(TransformFunctor &&transformFunctor) const noexcept -> decltype(auto)
     {
         using ret_type = decltype(transformFunctor(value_type()));
 
@@ -2191,7 +2191,7 @@ public:
         \return An relinx_object whose elements are the result of invoking the transform functor on each element of source.
     */
     template<typename TransformFunctor>
-    auto select_i(TransformFunctor &&transformFunctor) const -> decltype(auto)
+    auto select_i(TransformFunctor &&transformFunctor) const noexcept -> decltype(auto)
     {
         return _indexer = 0, select([this, &transformFunctor](auto &&v) { return transformFunctor(std::forward<decltype(v)>(v), _indexer++); });
     }
@@ -2234,7 +2234,7 @@ public:
         \return A \ref relinx_object whose elements are the result of invoking the one-to-many transform function on each element of the input sequence.
     */
     template<typename ContainerSelectorFunctor>
-    auto select_many(ContainerSelectorFunctor &&containerSelectorFunctor) const -> decltype(auto)
+    auto select_many(ContainerSelectorFunctor &&containerSelectorFunctor) const noexcept -> decltype(auto)
     {
         using cont_type = decltype(containerSelectorFunctor(value_type()));
 
@@ -2255,7 +2255,7 @@ public:
         \return An relinx_object whose elements are the result of invoking the one-to-many transform function on each element of the input sequence.
     */
     template<typename ContainerSelectorFunctor>
-    auto select_many_i(ContainerSelectorFunctor &&containerSelectorFunctor) const -> decltype(auto)
+    auto select_many_i(ContainerSelectorFunctor &&containerSelectorFunctor) const noexcept -> decltype(auto)
     {
         return _indexer = 0, select_many([this, &containerSelectorFunctor](auto &&v) { return containerSelectorFunctor(std::forward<decltype(v)>(v), _indexer++); });
     }
@@ -2270,13 +2270,13 @@ public:
         \return true if the two source sequences are of equal length and their corresponding elements are equal according to the compare functor; otherwise, false.
     */
     template<typename Container, typename CompareFunctor>
-    auto sequence_equal(Container &&container, CompareFunctor &&compareFunctor) const -> decltype(auto)
+    auto sequence_equal(Container &&container, CompareFunctor &&compareFunctor) const noexcept -> decltype(auto)
     {
         return std::equal(_begin, _end, std::begin(container), std::forward<CompareFunctor>(compareFunctor));
     }
 
     template<typename T, typename CompareFunctor>
-    auto sequence_equal(std::initializer_list<T> &&container, CompareFunctor &&compareFunctor) const -> decltype(auto)
+    auto sequence_equal(std::initializer_list<T> &&container, CompareFunctor &&compareFunctor) const noexcept -> decltype(auto)
     {
         return sequence_equal<std::initializer_list<T>, CompareFunctor>(std::forward<std::initializer_list<T>>(container), std::forward<CompareFunctor>(compareFunctor));
     }
@@ -2290,13 +2290,13 @@ public:
         \return true if the two source sequences are of equal length and their corresponding elements are equal according to the default equality comparer for their type; otherwise, false.
     */
     template<typename Container>
-    auto sequence_equal(Container &&container) const -> decltype(auto)
+    auto sequence_equal(Container &&container) const noexcept -> decltype(auto)
     {
         return std::equal(_begin, _end, std::begin(container));
     }
 
     template<typename T>
-    auto sequence_equal(std::initializer_list<T> &&container) const -> decltype(auto)
+    auto sequence_equal(std::initializer_list<T> &&container) const noexcept -> decltype(auto)
     {
         return sequence_equal<std::initializer_list<T>>(std::forward<std::initializer_list<T>>(container));
     }
@@ -2726,7 +2726,7 @@ protected:
     Iterator _end;
 
     template<typename ConditionFunctor>
-    auto _last(ConditionFunctor &&conditionFunctor) const -> decltype(auto)
+    auto _last(ConditionFunctor &&conditionFunctor) const noexcept -> decltype(auto)
     {
         auto begin = _begin;
         auto end = _end;

@@ -417,7 +417,7 @@ int main()
         }
         catch(const not_found &ex)
         {
-            if (std::string(ex.what()) == "first") assert(true); else assert(false);
+            if (std::string(ex.what()) == "first"s) assert(true); else assert(false);
         }
 
         print_duration("first(f):", start);
@@ -436,7 +436,7 @@ int main()
         }
         catch(const no_elements &ex)
         {
-            if (std::string(ex.what()) == "first") assert(true); else assert(false);
+            if (std::string(ex.what()) == "first"s) assert(true); else assert(false);
         }
 
         print_duration("first():", start);
@@ -464,7 +464,7 @@ int main()
     { //auto range(T start, std::size_t count) -> decltype(auto)
         auto start = hr_clock::now();
 
-        assert(range(0, 9).to_string() == "012345678");
+        assert(range(0, 9).to_string() == "012345678"s);
 
         print_duration("range(v, v):", start);
     }
@@ -472,9 +472,9 @@ int main()
     { //auto repeat(T e, std::size_t count) -> decltype(auto)
         auto start = hr_clock::now();
 
-        assert(repeat(0, 9).to_string() == "000000000");
-        assert(repeat('0', 9).to_string() == "000000000");
-        assert(repeat("abc", 5).to_string() == "abcabcabcabcabc");
+        assert(repeat(0, 9).to_string() == "000000000"s);
+        assert(repeat('0', 9).to_string() == "000000000"s);
+        assert(repeat("abc", 5).to_string() == "abcabcabcabcabc"s);
 
         print_duration("repeat(v, v):", start);
     }
