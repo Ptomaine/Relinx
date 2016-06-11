@@ -920,18 +920,18 @@ int main()
         struct derived : public base { virtual ~derived(){} };
         struct derived2 : public base { virtual ~derived2(){} };
 
-        std::list<base*> t4_data = {new derived(), new derived2(), new derived(), new derived(), new derived2()};
+        std::list<base*> t1_data = {new derived(), new derived2(), new derived(), new derived(), new derived2()};
 
         auto start = hr_clock::now();
 
-        auto t4_res = from(t4_data).of_type<derived2*>();
+        auto t1_res = from(t1_data).of_type<derived2*>();
 
-        assert(t4_res.all([](auto &&i){ return typeid(i) == typeid(derived2*); }));
-        assert(t4_res.count() == 2);
+        assert(t1_res.all([](auto &&i){ return typeid(i) == typeid(derived2*); }));
+        assert(t1_res.count() == 2);
 
         print_duration("of_type():", start);
 
-        for(auto &&i : t4_data){ delete i; };
+        for(auto &&i : t1_data){ delete i; };
     }
 
     { //auto reverse() const -> decltype(auto)
