@@ -37,6 +37,8 @@ SOFTWARE.
 
 namespace relinx
 {
+using namespace std::literals;
+
 template<typename T> using default_container = std::vector<T>;
 template<typename T, typename V> using default_map = std::unordered_map<T, V>;
 template<typename T, typename V> using default_multimap = std::unordered_multimap<T, V>;
@@ -1086,7 +1088,7 @@ public:
     template<typename AggregateFunctor>
     auto aggregate(AggregateFunctor &&aggregateFunctor) const -> decltype(auto)
     {
-        if (_begin == _end) throw no_elements("aggregate");
+        if (_begin == _end) throw no_elements("aggregate"s);
 
         auto begin = _begin;
         auto front = *_begin;
@@ -1114,7 +1116,7 @@ public:
     template<typename SeedType, typename AggregateFunctor>
     auto aggregate(SeedType &&seed, AggregateFunctor &&aggregateFunctor) const -> decltype(auto)
     {
-        if (_begin == _end) throw no_elements("aggregate");
+        if (_begin == _end) throw no_elements("aggregate"s);
 
         return std::accumulate(_begin, _end, std::forward<SeedType>(seed), std::forward<AggregateFunctor>(aggregateFunctor));
     }
@@ -1138,7 +1140,7 @@ public:
     template<typename SeedType, typename AggregateFunctor, typename ResultSelector>
     auto aggregate(SeedType &&seed, AggregateFunctor &&aggregateFunctor, ResultSelector &&resultSelector) const -> decltype(auto)
     {
-        if (_begin == _end) throw no_elements("aggregate");
+        if (_begin == _end) throw no_elements("aggregate"s);
 
         return resultSelector(std::forward<decltype(aggregate(seed, aggregateFunctor))>(aggregate(std::forward<SeedType>(seed), std::forward<AggregateFunctor>(aggregateFunctor))));
     }
@@ -1474,7 +1476,7 @@ public:
 
         while (index && begin != end) { ++begin; --index; }
 
-        if (begin == end) throw std::out_of_range("element_at");
+        if (begin == end) throw std::out_of_range("element_at"s);
 
         return *begin;
     }
@@ -1537,7 +1539,7 @@ public:
     {
         auto i = std::find_if(_begin, _end, std::forward<ConditionFunctor>(conditionFunctor));
 
-        if (i == _end) throw not_found("first");
+        if (i == _end) throw not_found("first"s);
 
         return *i;
     }
@@ -1552,7 +1554,7 @@ public:
     */
     auto first() const -> decltype(auto)
     {
-        if (_begin == _end) throw no_elements("first");
+        if (_begin == _end) throw no_elements("first"s);
 
         return *_begin;
     }
@@ -1933,11 +1935,11 @@ public:
     template<typename ConditionFunctor>
     auto last(ConditionFunctor &&conditionFunctor) const -> value_type
     {
-        if (_begin == _end) throw no_elements("last");
+        if (_begin == _end) throw no_elements("last"s);
 
         auto lastValueIt = _last(std::forward<ConditionFunctor>(conditionFunctor));
 
-        if (lastValueIt == _end) throw not_found("last");
+        if (lastValueIt == _end) throw not_found("last"s);
 
         return *lastValueIt;
     }
@@ -1996,7 +1998,7 @@ public:
     template<typename TransformFunctor>
     auto max(TransformFunctor &&transformFunctor) const -> decltype(auto)
     {
-        if (_begin == _end) throw no_elements("max");
+        if (_begin == _end) throw no_elements("max"s);
 
         using ret_type = typename std::decay<decltype(transformFunctor(value_type()))>::type;
 
@@ -2015,7 +2017,7 @@ public:
     */
     auto max() const -> decltype(auto)
     {
-        if (_begin == _end) throw no_elements("max");
+        if (_begin == _end) throw no_elements("max"s);
 
         return *std::max_element(_begin, _end);
     }
@@ -2031,7 +2033,7 @@ public:
     template<typename TransformFunctor>
     auto min(TransformFunctor &&transformFunctor) const -> decltype(auto)
     {
-        if (_begin == _end) throw no_elements("min");
+        if (_begin == _end) throw no_elements("min"s);
 
         using ret_type = decltype(transformFunctor(value_type()));
 
@@ -2050,7 +2052,7 @@ public:
     */
     auto min() const -> decltype(auto)
     {
-        if (_begin == _end) throw no_elements("min");
+        if (_begin == _end) throw no_elements("min"s);
 
         return *std::min_element(_begin, _end);
     }
@@ -2312,16 +2314,16 @@ public:
     template<typename ConditionFunctor>
     auto single(ConditionFunctor &&conditionFunctor) const -> decltype(auto)
     {
-        if (_begin == _end) throw no_elements("single");
+        if (_begin == _end) throw no_elements("single"s);
 
         auto i = std::find_if(_begin, _end, conditionFunctor);
 
-        if (i == _end) throw not_found("single");
+        if (i == _end) throw not_found("single"s);
 
         auto ii = i;
         auto n = std::find_if(++ii, _end, conditionFunctor);
 
-        if (n != _end) throw invalid_operation("single");
+        if (n != _end) throw invalid_operation("single"s);
 
         return *i;
     }
@@ -2334,11 +2336,11 @@ public:
     */
     auto single() const -> decltype(auto)
     {
-        if (_begin == _end) throw no_elements("single");
+        if (_begin == _end) throw no_elements("single"s);
 
         auto begin = _begin;
 
-        if (++begin != _end) throw invalid_operation("single");
+        if (++begin != _end) throw invalid_operation("single"s);
 
         return *_begin;
     }
@@ -2362,7 +2364,7 @@ public:
         auto ii = i;
         auto n = std::find_if(++ii, _end, conditionFunctor);
 
-        if (n != _end) throw invalid_operation("single_or_default");
+        if (n != _end) throw invalid_operation("single_or_default"s);
 
         return *i;
     }
@@ -2381,7 +2383,7 @@ public:
 
         auto begin = _begin;
 
-        if (++begin != _end) throw invalid_operation("single_or_default");
+        if (++begin != _end) throw invalid_operation("single_or_default"s);
 
         return *_begin;
     }
