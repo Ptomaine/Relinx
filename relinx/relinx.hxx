@@ -2858,7 +2858,7 @@ auto range(T start, std::size_t count) -> decltype(auto)
 {
     default_container<T> c(count);
 
-    std::generate(c.begin(), c.end(), [&start](){ return start++; });
+    std::generate(std::begin(c), std::end(c), [&start](){ return start++; });
 
     return relinx_object<decltype(std::begin(c)), decltype(c)>(std::move(c));
 }
@@ -2878,7 +2878,7 @@ auto repeat(T e, std::size_t count) -> decltype(auto)
 {
     default_container<T> c(count);
 
-    std::fill(c.begin(), c.end(), e);
+    std::fill(std::begin(c), std::end(c), e);
 
     return relinx_object<decltype(std::begin(c))>(std::move(c));
 }
