@@ -1052,6 +1052,11 @@ public:
     using value_type = typename std::decay<decltype(*Iterator())>::type;
     using iterator_type = typename std::decay<Iterator>::type;
 
+    relinx_object() = delete;
+    relinx_object(const relinx_object &) = delete;
+    auto operator =(const relinx_object &) -> relinx_object & = delete;
+    relinx_object(relinx_object &&) = default;
+
     relinx_object(iterator_type begin, iterator_type end) noexcept : _begin(begin), _end(end) {}
     relinx_object(ContainerType &&container) noexcept : _container(std::forward<ContainerType>(container)), _begin(std::begin(_container)), _end(std::end(_container)) {}
 
@@ -1256,10 +1261,9 @@ public:
     template<typename CastType>
     auto cast() const noexcept -> decltype(auto)
     {
-        auto begin = transform_iterator_adapter<iterator_type, std::function<CastType(const value_type&)>>(_begin, _end, [](auto &&v){ return static_cast<CastType>(v); });
-        auto end = transform_iterator_adapter<iterator_type, std::function<CastType(const value_type&)>>(_end, _end, nullptr);
+        using adapter_type = transform_iterator_adapter<iterator_type, std::function<CastType(const value_type&)>>;
 
-        return relinx_object<decltype(begin)>(std::move(begin), std::move(end));
+        return relinx_object<adapter_type>(adapter_type(_begin, _end, [](auto &&v){ return static_cast<CastType>(v); }), adapter_type(_end, _end, nullptr));
     }
 
     /**
@@ -1276,13 +1280,11 @@ public:
     template<typename Container>
     auto concat(Container &&c) const noexcept -> decltype(auto)
     {
-        using container_iterator_type = typename std::decay<decltype(std::begin(c))>::type;
+        using adapter_type = concat_iterator_adapter<iterator_type, typename std::decay<decltype(std::begin(c))>::type>;
 
         auto end_it = std::end(c);
-        auto begin = concat_iterator_adapter<iterator_type, container_iterator_type>(_begin, _end, std::begin(c), end_it);
-        auto end = concat_iterator_adapter<iterator_type, container_iterator_type>(_end, _end, end_it, end_it);
 
-        return relinx_object<typename std::decay<decltype(begin)>::type>(std::move(begin), std::move(end));
+        return relinx_object<adapter_type>(adapter_type(_begin, _end, std::begin(c), end_it), adapter_type(_end, _end, end_it, end_it));
     }
 
     template<typename T>
@@ -1416,10 +1418,9 @@ public:
     */
     auto cycle(std::ptrdiff_t times = -1) const noexcept -> decltype(auto)
     {
-        auto cycle_begin = cycle_iterator_adapter<decltype(_begin)>(_begin, _end, times);
-        auto cycle_end = cycle_iterator_adapter<decltype(_begin)>(_end, _end, times);
+        using adapter_type = cycle_iterator_adapter<decltype(_begin)>;
 
-        return relinx_object<decltype(cycle_begin)>(std::move(cycle_begin), std::move(cycle_end));
+        return relinx_object<adapter_type>(adapter_type(_begin, _end, times), adapter_type(_end, _end, times));
     }
 
     /**
@@ -1451,12 +1452,10 @@ public:
     template<typename KeyFunctor = std::function<value_type(const value_type &)>>
     auto distinct(KeyFunctor &&keyFunctor = [](auto &&v) { return v; }) const noexcept -> decltype(auto)
     {
-        using ret_type = decltype(keyFunctor(value_type()));
+        using ret_type = typename std::decay<decltype(keyFunctor(value_type()))>::type;
+        using adapter_type = distinct_iterator_adapter<iterator_type, std::function<ret_type(const value_type &)>>;
 
-        auto begin = distinct_iterator_adapter<iterator_type, std::function<ret_type(const value_type &)>>(_begin, _end, std::forward<KeyFunctor>(keyFunctor));
-        auto end = distinct_iterator_adapter<iterator_type, std::function<ret_type(const value_type &)>>(_end, _end, nullptr);
-
-        return relinx_object<decltype(begin)>(std::move(begin), std::move(end));
+        return relinx_object<adapter_type>(adapter_type(_begin, _end, std::forward<KeyFunctor>(keyFunctor)), adapter_type(_end, _end, nullptr));
     }
 
     /** \brief Returns the element at a specified index in a sequence.
@@ -1511,11 +1510,11 @@ public:
     template<typename Container>
     auto except(Container &&container, std::function<bool(const value_type&, const value_type&)> &&compareFunctor = [](auto &&a, auto &&b) { return a == b; }) const noexcept -> decltype(auto)
     {
-        auto end_it = std::end(container);
-        auto begin = except_iterator_adapter<iterator_type, decltype(std::begin(container)), std::function<bool(const value_type&, const value_type&)>>(_begin, _end, std::begin(container), end_it, std::forward<std::function<bool(const value_type&, const value_type&)>>(compareFunctor));
-        auto end = except_iterator_adapter<iterator_type, decltype(std::begin(container)), std::function<bool(const value_type&, const value_type&)>>(_end, _end, end_it, end_it, nullptr);
+        using adapter_type = except_iterator_adapter<iterator_type, decltype(std::begin(container)), std::function<bool(const value_type&, const value_type&)>>;
 
-        return relinx_object<decltype(begin)>(std::move(begin), std::move(end));
+        auto end_it = std::end(container);
+
+        return relinx_object<adapter_type>(adapter_type(_begin, _end, std::begin(container), end_it, std::forward<std::function<bool(const value_type&, const value_type&)>>(compareFunctor)), adapter_type(_end, _end, end_it, end_it, nullptr));
     }
 
     template<typename T>
@@ -1688,13 +1687,16 @@ public:
         using otherKeyType = typename std::decay<decltype(otherKeyFunctor(joinType()))>::type;
         using resultType = typename std::decay<decltype(resultFunctor(value_type(), default_container<joinType>()))>::type;
 
+        using adapter_type = group_join_iterator_adapter<iterator_type,
+                                                    joinIteratorType,
+                                                    std::function<thisKeyType(const value_type&)>,
+                                                    std::function<otherKeyType(const joinType&)>,
+                                                    std::function<resultType(const value_type&, const default_container<joinType>&)>,
+                                                    std::function<bool(const thisKeyType&, const otherKeyType&)>>;
+
         auto end_it = std::end(container);
-        auto begin = group_join_iterator_adapter< iterator_type,
-                                            joinIteratorType,
-                                            std::function<thisKeyType(const value_type&)>,
-                                            std::function<otherKeyType(const joinType&)>,
-                                            std::function<resultType(const value_type&, const default_container<joinType>&)>,
-                                            std::function<bool(const thisKeyType&, const otherKeyType&)>>
+
+        return relinx_object<adapter_type>(adapter_type
                                             (
                                                 _begin,
                                                 _end,
@@ -1705,15 +1707,9 @@ public:
                                                 std::forward<ResultFunctor>(resultFunctor),
                                                 std::forward<CompareFunctor>(compareFunctor),
                                                 leftJoin
-                                             );
-
-        auto end = group_join_iterator_adapter<   iterator_type,
-                                            joinIteratorType,
-                                            std::function<thisKeyType(const value_type&)>,
-                                            std::function<otherKeyType(const joinType&)>,
-                                            std::function<resultType(const value_type&, const default_container<joinType>&)>,
-                                            std::function<bool(const thisKeyType&, const otherKeyType&)>>
-                                            (
+                                             ),
+                                       adapter_type
+                                             (
                                                 _end,
                                                 _end,
                                                 end_it,
@@ -1723,9 +1719,7 @@ public:
                                                 nullptr,
                                                 nullptr,
                                                 leftJoin
-                                             );
-
-        return relinx_object<decltype(begin)>(std::move(begin), std::move(end));
+                                             ));
     }
 
     template<typename T, typename ThisKeyFunctor, typename OtherKeyFunctor, typename ResultFunctor, typename CompareFunctor>
@@ -1797,11 +1791,11 @@ public:
     template<typename Container>
     auto intersect_with(Container &&container, std::function<bool(const value_type&, const value_type&)> &&compareFunctor = [](auto &&a, auto &&b) { return a == b; }) const noexcept -> decltype(auto)
     {
-        auto end_it = std::end(container);
-        auto begin = intersect_iterator_adapter<iterator_type, decltype(std::begin(container)), std::function<bool(const value_type&, const value_type&)>>(_begin, _end, std::begin(container), end_it, std::forward<std::function<bool(const value_type&, const value_type&)>>(compareFunctor));
-        auto end = intersect_iterator_adapter<iterator_type, decltype(std::begin(container)), std::function<bool(const value_type&, const value_type&)>>(_end, _end, end_it, end_it, nullptr);
+        using adapter_type = intersect_iterator_adapter<iterator_type, decltype(std::begin(container)), std::function<bool(const value_type&, const value_type&)>>;
 
-        return relinx_object<decltype(begin)>(std::move(begin), std::move(end));
+        auto end_it = std::end(container);
+
+        return relinx_object<adapter_type>(adapter_type(_begin, _end, std::begin(container), end_it, std::forward<std::function<bool(const value_type&, const value_type&)>>(compareFunctor)), adapter_type(_end, _end, end_it, end_it, nullptr));
     }
 
     template<typename T>
@@ -1834,13 +1828,16 @@ public:
         using otherKeyType = typename std::decay<decltype(otherKeyFunctor(joinType()))>::type;
         using resultType = typename std::decay<decltype(resultFunctor(value_type(), joinType()))>::type;
 
+        using adapter_type = join_iterator_adapter<iterator_type,
+                                              joinIteratorType,
+                                              std::function<thisKeyType(const value_type&)>,
+                                              std::function<otherKeyType(const joinType&)>,
+                                              std::function<resultType(const value_type&, const joinType&)>,
+                                              std::function<bool(const thisKeyType&, const otherKeyType&)>>;
+
         auto end_it = std::end(container);
-        auto begin = join_iterator_adapter< iterator_type,
-                                            joinIteratorType,
-                                            std::function<thisKeyType(const value_type&)>,
-                                            std::function<otherKeyType(const joinType&)>,
-                                            std::function<resultType(const value_type&, const joinType&)>,
-                                            std::function<bool(const thisKeyType&, const otherKeyType&)>>
+
+        return relinx_object<adapter_type>(adapter_type
                                             (
                                                 _begin,
                                                 _end,
@@ -1851,15 +1848,9 @@ public:
                                                 std::forward<ResultFunctor>(resultFunctor),
                                                 std::forward<CompareFunctor>(compareFunctor),
                                                 leftJoin
-                                             );
-
-        auto end = join_iterator_adapter<   iterator_type,
-                                            joinIteratorType,
-                                            std::function<thisKeyType(const value_type&)>,
-                                            std::function<otherKeyType(const joinType&)>,
-                                            std::function<resultType(const value_type&, const joinType&)>,
-                                            std::function<bool(const thisKeyType&, const otherKeyType&)>>
-                                            (
+                                             ),
+                                      adapter_type
+                                             (
                                                 _end,
                                                 _end,
                                                 end_it,
@@ -1869,9 +1860,7 @@ public:
                                                 nullptr,
                                                 nullptr,
                                                 leftJoin
-                                             );
-
-        return relinx_object<decltype(begin)>(std::move(begin), std::move(end));
+                                             ));
     }
 
     template<typename T, typename ThisKeyFunctor, typename OtherKeyFunctor, typename ResultFunctor, typename CompareFunctor>
@@ -2002,9 +1991,8 @@ public:
 
         using ret_type = typename std::decay<decltype(transformFunctor(value_type()))>::type;
 
-        auto begin = transform_iterator_adapter<iterator_type, std::function<ret_type(const value_type&)>>(_begin, _end, std::forward<TransformFunctor>(transformFunctor));
-        auto end = transform_iterator_adapter<iterator_type, std::function<ret_type(const value_type&)>>(_end, _end, nullptr);
-        auto result = *std::max_element(begin, end);
+        auto result = *std::max_element(transform_iterator_adapter<iterator_type, std::function<ret_type(const value_type&)>>(_begin, _end, std::forward<TransformFunctor>(transformFunctor)),
+                                        transform_iterator_adapter<iterator_type, std::function<ret_type(const value_type&)>>(_end, _end, nullptr));
 
         return result;
     }
@@ -2037,9 +2025,8 @@ public:
 
         using ret_type = decltype(transformFunctor(value_type()));
 
-        auto begin = transform_iterator_adapter<iterator_type, std::function<ret_type(const value_type&)>>(_begin, _end, std::forward<TransformFunctor>(transformFunctor));
-        auto end = transform_iterator_adapter<iterator_type, std::function<ret_type(const value_type&)>>(_end, _end, nullptr);
-        auto result = *std::min_element(begin, end);
+        auto result = *std::min_element(transform_iterator_adapter<iterator_type, std::function<ret_type(const value_type&)>>(_begin, _end, std::forward<TransformFunctor>(transformFunctor)),
+                                        transform_iterator_adapter<iterator_type, std::function<ret_type(const value_type&)>>(_end, _end, nullptr));
 
         return result;
     }
@@ -2175,11 +2162,9 @@ public:
     auto select(TransformFunctor &&transformFunctor) const noexcept -> decltype(auto)
     {
         using ret_type = decltype(transformFunctor(value_type()));
+        using adapter_type = transform_iterator_adapter<iterator_type, std::function<ret_type(const value_type&)>>;
 
-        auto begin = transform_iterator_adapter<iterator_type, std::function<ret_type(const value_type&)>>(_begin, _end, std::forward<TransformFunctor>(transformFunctor));
-        auto end = transform_iterator_adapter<iterator_type, std::function<ret_type(const value_type&)>>(_end, _end, nullptr);
-
-        return relinx_object<decltype(begin)>(std::move(begin), std::move(end));
+        return relinx_object<adapter_type>(adapter_type(_begin, _end, std::forward<TransformFunctor>(transformFunctor)), adapter_type(_end, _end, nullptr));
     }
 
     /** \brief Projects each element of a sequence into a new form.
@@ -2239,11 +2224,9 @@ public:
     auto select_many(ContainerSelectorFunctor &&containerSelectorFunctor) const noexcept -> decltype(auto)
     {
         using cont_type = decltype(containerSelectorFunctor(value_type()));
+        using adapter_type = select_many_iterator_adapter<iterator_type, std::function<cont_type(const value_type&)>>;
 
-        auto begin = select_many_iterator_adapter<iterator_type, std::function<cont_type(const value_type&)>>(_begin, _end, std::forward<ContainerSelectorFunctor>(containerSelectorFunctor));
-        auto end = select_many_iterator_adapter<iterator_type, std::function<cont_type(const value_type&)>>(_end, _end, nullptr);
-
-        return relinx_object<decltype(begin)>(std::move(begin), std::move(end));
+        return relinx_object<adapter_type>(adapter_type(_begin, _end, std::forward<ContainerSelectorFunctor>(containerSelectorFunctor)), adapter_type(_end, _end, nullptr));
     }
 
     /** \brief Projects each element of a sequence to a container and flattens the resulting sequences into one sequence.
@@ -2480,12 +2463,9 @@ public:
     */
     auto take(std::ptrdiff_t limit) const noexcept -> decltype(auto)
     {
-        _indexer = limit;
+        using adapter_type = limit_iterator_adapter<iterator_type, std::function<bool(const value_type&)>>;
 
-        auto begin = limit_iterator_adapter<iterator_type, std::function<bool(const value_type&)>>(_begin, _end, [this](auto &&){ return _indexer-- > 0; });
-        auto end = limit_iterator_adapter<iterator_type, std::function<bool(const value_type&)>>(_end, _end, nullptr);
-
-        return relinx_object<decltype(begin)>(std::move(begin), std::move(end));
+        return _indexer = limit, relinx_object<adapter_type>(adapter_type(_begin, _end, [this](auto &&){ return _indexer-- > 0; }), adapter_type(_end, _end, nullptr));
     }
 
     /** \brief Returns elements from a sequence as long as a specified condition is true.
@@ -2501,10 +2481,9 @@ public:
     template<typename LimitFunctor>
     auto take_while(LimitFunctor &&limitFunctor) const noexcept -> decltype(auto)
     {
-        auto begin = limit_iterator_adapter<iterator_type, std::function<bool(const value_type&)>>(_begin, _end, std::forward<LimitFunctor>(limitFunctor));
-        auto end = limit_iterator_adapter<iterator_type, std::function<bool(const value_type&)>>(_end, _end, nullptr);
+        using adapter_type = limit_iterator_adapter<iterator_type, std::function<bool(const value_type&)>>;
 
-        return relinx_object<decltype(begin)>(std::move(begin), std::move(end));
+        return relinx_object<adapter_type>(adapter_type(_begin, _end, std::forward<LimitFunctor>(limitFunctor)), adapter_type(_end, _end, nullptr));
     }
 
     /** \brief Exactly the same as \ref take_while.
@@ -2666,10 +2645,9 @@ public:
     template<typename FilterFunctor>
     auto where(FilterFunctor &&filterFunctor) const noexcept -> decltype(auto)
     {
-        auto begin = filter_iterator_adapter<iterator_type, std::function<bool(const value_type&)>>(_begin, _end, filterFunctor);
-        auto end = filter_iterator_adapter<iterator_type, std::function<bool(const value_type&)>>(_end, _end, nullptr);
+        using adapter_type = filter_iterator_adapter<iterator_type, std::function<bool(const value_type&)>>;
 
-        return relinx_object<decltype(begin)>(std::move(begin), std::move(end));
+        return relinx_object<adapter_type>(adapter_type(_begin, _end, std::forward<FilterFunctor>(filterFunctor)), adapter_type(_end, _end, nullptr));
     }
 
     /** \brief The same as \ref where but a filter functor takes an index as the second parameter.
@@ -2704,12 +2682,11 @@ public:
         using container_iterator_type = decltype(std::begin(container));
         using container_type = typename std::decay<decltype(*std::begin(container))>::type;
         using ret_type = decltype(resultFunctor(value_type(), container_type()));
+        using adapter_type = zip_iterator_adapter<iterator_type, container_iterator_type, std::function<ret_type(const value_type&, const container_type&)>>;
 
         auto end_it = std::end(container);
-        auto begin = zip_iterator_adapter<iterator_type, container_iterator_type, std::function<ret_type(const value_type&, const container_type&)>>(_begin, _end, std::begin(container), end_it, resultFunctor);
-        auto end = zip_iterator_adapter<iterator_type, container_iterator_type, std::function<ret_type(const value_type&, const container_type&)>>(_end, _end, end_it, end_it, nullptr);
 
-        return relinx_object<decltype(begin)>(std::move(begin), std::move(end));
+        return relinx_object<adapter_type>(adapter_type(_begin, _end, std::begin(container), end_it, std::forward<ResultFunctor>(resultFunctor)), adapter_type(_end, _end, end_it, end_it, nullptr));
     }
 
     template<typename T, typename ResultFunctor>
@@ -2833,7 +2810,7 @@ auto from(std::initializer_list<T> &&i) -> decltype(auto)
 template <typename Iterator>
 auto from(Iterator &&begin, Iterator &&end) -> decltype(auto)
 {
-    return relinx_object<typename std::decay<decltype(begin)>::type>(begin, end);
+    return relinx_object<typename std::decay<decltype(begin)>::type>(std::forward<Iterator>(begin), std::forward<Iterator>(end));
 }
 
 template <typename T>
