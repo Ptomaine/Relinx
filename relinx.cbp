@@ -26,6 +26,11 @@
 				<Option compiler="clang" />
 				<Compiler>
 					<Add option="-O3" />
+					<Add option="-Wnon-virtual-dtor" />
+					<Add option="-Wbind-to-temporary-copy" />
+					<Add option="-Wambiguous-member-template" />
+					<Add option="-pedantic-errors" />
+					<Add option="-pedantic" />
 					<Add option="-Wall" />
 					<Add option="-target x86_64-w64-mingw32" />
 				</Compiler>
@@ -41,6 +46,8 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-O3" />
+					<Add option="-pedantic" />
+					<Add option="-Wextra" />
 					<Add option="-Wall" />
 				</Compiler>
 				<Linker>
