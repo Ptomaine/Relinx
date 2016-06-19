@@ -2482,7 +2482,7 @@ public:
     {
         _indexer = limit;
 
-        auto begin = limit_iterator_adapter<iterator_type, std::function<bool(const value_type&)>>(_begin, _end, [this](auto &&v){ return _indexer-- > 0; });
+        auto begin = limit_iterator_adapter<iterator_type, std::function<bool(const value_type&)>>(_begin, _end, [this](auto &&){ return _indexer-- > 0; });
         auto end = limit_iterator_adapter<iterator_type, std::function<bool(const value_type&)>>(_end, _end, nullptr);
 
         return relinx_object<decltype(begin)>(std::move(begin), std::move(end));

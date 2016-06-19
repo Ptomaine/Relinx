@@ -181,7 +181,7 @@ int main()
         auto start = hr_clock::now();
 
         assert(from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}).all([](auto &&r) { return r > 0; }) == true);
-        assert(from(std::vector<int>()).all([](auto &&v) { return false; }) == true);
+        assert(from(std::vector<int>()).all([](auto &&) { return false; }) == true);
 
         auto t2_res = from({"1"s, "2"s, "3"s, "4"s, "5"s, "6"s, "7"s, "8"s, "9"s, "10"s}).all([](auto &&r) { return r.length() > 1; });
         assert(t2_res == false);
@@ -197,7 +197,7 @@ int main()
 
         auto t2_res = from({"1"s, "2"s, "3"s, "4"s, "5"s, "6"s, "7"s, "8"s, "9"s, "10"s}).any([](auto &&r) { return r.length() == 3; });
         assert(t2_res == false);
-        assert(from(std::vector<int>()).any([](auto &&v) { return true; }) == false);
+        assert(from(std::vector<int>()).any([](auto &&) { return true; }) == false);
 
         print_duration("any(f):", start);
     }
@@ -1297,7 +1297,7 @@ int main()
 
         std::vector<int> t1_data;
 
-        assert(from({"1"s, "2"s, "3"s, "4"s, "5"s, "6"s, "7"s, "8"s}).take_while_i([](auto &&v, auto &&idx) { return idx < 6; }).to_string() == "123456"s);
+        assert(from({"1"s, "2"s, "3"s, "4"s, "5"s, "6"s, "7"s, "8"s}).take_while_i([](auto &&, auto &&idx) { return idx < 6; }).to_string() == "123456"s);
 
         print_duration("take_while_i(f):", start);
     }
