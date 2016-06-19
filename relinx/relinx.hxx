@@ -2730,6 +2730,11 @@ public:
     using base = relinx_object<Iterator>;
     using value_type = typename std::decay<decltype(*Iterator())>::type;
 
+    relinx_object_ordered() = delete;
+    relinx_object_ordered(const relinx_object_ordered &) = delete;
+    auto operator =(const relinx_object_ordered &) -> relinx_object_ordered & = delete;
+    relinx_object_ordered(relinx_object_ordered &&) = default;
+
     relinx_object_ordered(default_container<value_type> &&ordered, PreviousSelectFunctor &&previousSelectFunctor) :
         relinx_object<Iterator>(std::begin(ordered), std::end(ordered)),
         _ordered_values(std::forward<default_container<value_type>>(ordered)),
