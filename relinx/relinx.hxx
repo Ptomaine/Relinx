@@ -1044,7 +1044,7 @@ struct invalid_operation : public std::logic_error { invalid_operation(const std
 
 template<typename Iterator, typename PreviousSelectFunctor> class relinx_object_ordered;
 
-template<typename Iterator, typename ContainerType = default_container<typename std::decay<decltype(*Iterator())>::type>>
+template<typename Iterator, typename StoreType = default_container<typename std::decay<decltype(*Iterator())>::type>, typename ContainerType = default_container<typename std::decay<decltype(*Iterator())>::type>>
 class relinx_object
 {
 public:
@@ -1058,6 +1058,7 @@ public:
     relinx_object(relinx_object &&) = default;
 
     relinx_object(iterator_type begin, iterator_type end) noexcept : _begin(begin), _end(end) {}
+    relinx_object(iterator_type begin, iterator_type end, StoreType &&container, StoreType &&def_val_container) noexcept : _begin(begin), _end(end), _container_store(std::forward<StoreType>(container)), _def_val_container_store(std::forward<StoreType>(def_val_container)) {}
     relinx_object(ContainerType &&container) noexcept : _container(std::forward<ContainerType>(container)), _begin(std::begin(_container)), _end(std::end(_container)) {}
 
     auto begin() const noexcept -> decltype(auto)
@@ -1263,7 +1264,7 @@ public:
     {
         using adapter_type = transform_iterator_adapter<iterator_type, std::function<CastType(const value_type&)>>;
 
-        return relinx_object<adapter_type>(adapter_type(_begin, _end, [](auto &&v){ return static_cast<CastType>(v); }), adapter_type(_end, _end, nullptr));
+        return relinx_object<adapter_type, ContainerType>(adapter_type(_begin, _end, [](auto &&v){ return static_cast<CastType>(v); }), adapter_type(_end, _end, nullptr), std::move(_container), std::move(_def_val_container));
     }
 
     /**
@@ -1284,7 +1285,7 @@ public:
 
         auto end_it = std::end(c);
 
-        return relinx_object<adapter_type>(adapter_type(_begin, _end, std::begin(c), end_it), adapter_type(_end, _end, end_it, end_it));
+        return relinx_object<adapter_type, ContainerType>(adapter_type(_begin, _end, std::begin(c), end_it), adapter_type(_end, _end, end_it, end_it), std::move(_container), std::move(_def_val_container));
     }
 
     template<typename T>
@@ -1420,7 +1421,7 @@ public:
     {
         using adapter_type = cycle_iterator_adapter<decltype(_begin)>;
 
-        return relinx_object<adapter_type>(adapter_type(_begin, _end, times), adapter_type(_end, _end, times));
+        return relinx_object<adapter_type, ContainerType>(adapter_type(_begin, _end, times), adapter_type(_end, _end, times), std::move(_container), std::move(_def_val_container));
     }
 
     /**
@@ -1455,7 +1456,7 @@ public:
         using ret_type = typename std::decay<decltype(keyFunctor(value_type()))>::type;
         using adapter_type = distinct_iterator_adapter<iterator_type, std::function<ret_type(const value_type &)>>;
 
-        return relinx_object<adapter_type>(adapter_type(_begin, _end, std::forward<KeyFunctor>(keyFunctor)), adapter_type(_end, _end, nullptr));
+        return relinx_object<adapter_type, ContainerType>(adapter_type(_begin, _end, std::forward<KeyFunctor>(keyFunctor)), adapter_type(_end, _end, nullptr), std::move(_container), std::move(_def_val_container));
     }
 
     /** \brief Returns the element at a specified index in a sequence.
@@ -1514,7 +1515,7 @@ public:
 
         auto end_it = std::end(container);
 
-        return relinx_object<adapter_type>(adapter_type(_begin, _end, std::begin(container), end_it, std::forward<std::function<bool(const value_type&, const value_type&)>>(compareFunctor)), adapter_type(_end, _end, end_it, end_it, nullptr));
+        return relinx_object<adapter_type, ContainerType>(adapter_type(_begin, _end, std::begin(container), end_it, std::forward<std::function<bool(const value_type&, const value_type&)>>(compareFunctor)), adapter_type(_end, _end, end_it, end_it, nullptr), std::move(_container), std::move(_def_val_container));
     }
 
     template<typename T>
@@ -1660,7 +1661,7 @@ public:
             ++begin;
         }
 
-        return relinx_object<decltype(std::begin(group_map)), decltype(group_map)>(std::move(group_map));
+        return relinx_object<decltype(std::begin(group_map)), ContainerType, decltype(group_map)>(std::move(group_map));
     }
 
     /** \brief Correlates the elements of two sequences based on key equality, and groups the results.
@@ -1696,7 +1697,7 @@ public:
 
         auto end_it = std::end(container);
 
-        return relinx_object<adapter_type>(adapter_type
+        return relinx_object<adapter_type, ContainerType>(adapter_type
                                             (
                                                 _begin,
                                                 _end,
@@ -1719,7 +1720,7 @@ public:
                                                 nullptr,
                                                 nullptr,
                                                 leftJoin
-                                             ));
+                                             ), std::move(_container), std::move(_def_val_container));
     }
 
     template<typename T, typename ThisKeyFunctor, typename OtherKeyFunctor, typename ResultFunctor, typename CompareFunctor>
@@ -1795,7 +1796,7 @@ public:
 
         auto end_it = std::end(container);
 
-        return relinx_object<adapter_type>(adapter_type(_begin, _end, std::begin(container), end_it, std::forward<std::function<bool(const value_type&, const value_type&)>>(compareFunctor)), adapter_type(_end, _end, end_it, end_it, nullptr));
+        return relinx_object<adapter_type, ContainerType>(adapter_type(_begin, _end, std::begin(container), end_it, std::forward<std::function<bool(const value_type&, const value_type&)>>(compareFunctor)), adapter_type(_end, _end, end_it, end_it, nullptr), std::move(_container), std::move(_def_val_container));
     }
 
     template<typename T>
@@ -1837,7 +1838,7 @@ public:
 
         auto end_it = std::end(container);
 
-        return relinx_object<adapter_type>(adapter_type
+        return relinx_object<adapter_type, ContainerType>(adapter_type
                                             (
                                                 _begin,
                                                 _end,
@@ -1860,7 +1861,7 @@ public:
                                                 nullptr,
                                                 nullptr,
                                                 leftJoin
-                                             ));
+                                             ), std::move(_container), std::move(_def_val_container));
     }
 
     template<typename T, typename ThisKeyFunctor, typename OtherKeyFunctor, typename ResultFunctor, typename CompareFunctor>
@@ -2136,7 +2137,7 @@ public:
 
         std::reverse(std::begin(c), std::end(c));
 
-        return relinx_object<decltype(std::begin(c))>(std::move(c));
+        return relinx_object<decltype(std::begin(c)), ContainerType>(std::move(c));
     }
 
     /** \brief Projects each element of a sequence into a new form.
@@ -2164,7 +2165,7 @@ public:
         using ret_type = decltype(transformFunctor(value_type()));
         using adapter_type = transform_iterator_adapter<iterator_type, std::function<ret_type(const value_type&)>>;
 
-        return relinx_object<adapter_type>(adapter_type(_begin, _end, std::forward<TransformFunctor>(transformFunctor)), adapter_type(_end, _end, nullptr));
+        return relinx_object<adapter_type, ContainerType>(adapter_type(_begin, _end, std::forward<TransformFunctor>(transformFunctor)), adapter_type(_end, _end, nullptr), std::move(_container), std::move(_def_val_container));
     }
 
     /** \brief Projects each element of a sequence into a new form.
@@ -2226,7 +2227,7 @@ public:
         using cont_type = decltype(containerSelectorFunctor(value_type()));
         using adapter_type = select_many_iterator_adapter<iterator_type, std::function<cont_type(const value_type&)>>;
 
-        return relinx_object<adapter_type>(adapter_type(_begin, _end, std::forward<ContainerSelectorFunctor>(containerSelectorFunctor)), adapter_type(_end, _end, nullptr));
+        return relinx_object<adapter_type, ContainerType>(adapter_type(_begin, _end, std::forward<ContainerSelectorFunctor>(containerSelectorFunctor)), adapter_type(_end, _end, nullptr), std::move(_container), std::move(_def_val_container));
     }
 
     /** \brief Projects each element of a sequence to a container and flattens the resulting sequences into one sequence.
@@ -2465,7 +2466,7 @@ public:
     {
         using adapter_type = limit_iterator_adapter<iterator_type, std::function<bool(const value_type&)>>;
 
-        return _indexer = limit, relinx_object<adapter_type>(adapter_type(_begin, _end, [this](auto &&){ return _indexer-- > 0; }), adapter_type(_end, _end, nullptr));
+        return _indexer = limit, relinx_object<adapter_type, ContainerType>(adapter_type(_begin, _end, [this](auto &&){ return _indexer-- > 0; }), adapter_type(_end, _end, nullptr), std::move(_container), std::move(_def_val_container));
     }
 
     /** \brief Returns elements from a sequence as long as a specified condition is true.
@@ -2483,7 +2484,7 @@ public:
     {
         using adapter_type = limit_iterator_adapter<iterator_type, std::function<bool(const value_type&)>>;
 
-        return relinx_object<adapter_type>(adapter_type(_begin, _end, std::forward<LimitFunctor>(limitFunctor)), adapter_type(_end, _end, nullptr));
+        return relinx_object<adapter_type, ContainerType>(adapter_type(_begin, _end, std::forward<LimitFunctor>(limitFunctor)), adapter_type(_end, _end, nullptr), std::move(_container), std::move(_def_val_container));
     }
 
     /** \brief Exactly the same as \ref take_while.
@@ -2647,7 +2648,7 @@ public:
     {
         using adapter_type = filter_iterator_adapter<iterator_type, std::function<bool(const value_type&)>>;
 
-        return relinx_object<adapter_type>(adapter_type(_begin, _end, std::forward<FilterFunctor>(filterFunctor)), adapter_type(_end, _end, nullptr));
+        return relinx_object<adapter_type, ContainerType>(adapter_type(_begin, _end, std::forward<FilterFunctor>(filterFunctor)), adapter_type(_end, _end, nullptr), std::move(_container), std::move(_def_val_container));
     }
 
     /** \brief The same as \ref where but a filter functor takes an index as the second parameter.
@@ -2686,7 +2687,7 @@ public:
 
         auto end_it = std::end(container);
 
-        return relinx_object<adapter_type>(adapter_type(_begin, _end, std::begin(container), end_it, std::forward<ResultFunctor>(resultFunctor)), adapter_type(_end, _end, end_it, end_it, nullptr));
+        return relinx_object<adapter_type, ContainerType>(adapter_type(_begin, _end, std::begin(container), end_it, std::forward<ResultFunctor>(resultFunctor)), adapter_type(_end, _end, end_it, end_it, nullptr), std::move(_container), std::move(_def_val_container));
     }
 
     template<typename T, typename ResultFunctor>
@@ -2720,15 +2721,19 @@ protected:
 
         return lastValueIt;
     }
+
+    StoreType _container_store;
+    StoreType _def_val_container_store;
 };
 
 template<typename Iterator, typename PreviousSelectFunctor>
-class relinx_object_ordered : public relinx_object<Iterator>
+class relinx_object_ordered : public relinx_object<Iterator, default_container<typename std::decay<decltype(*Iterator())>::type>>
 {
 public:
     using self_type = relinx_object_ordered<Iterator, PreviousSelectFunctor>;
-    using base = relinx_object<Iterator>;
     using value_type = typename std::decay<decltype(*Iterator())>::type;
+    using store_type = default_container<value_type>;
+    using base = relinx_object<Iterator, store_type>;
 
     relinx_object_ordered() = delete;
     relinx_object_ordered(const relinx_object_ordered &) = delete;
@@ -2736,7 +2741,7 @@ public:
     relinx_object_ordered(relinx_object_ordered &&) = default;
 
     relinx_object_ordered(default_container<value_type> &&ordered, PreviousSelectFunctor &&previousSelectFunctor) :
-        relinx_object<Iterator>(std::begin(ordered), std::end(ordered)),
+        relinx_object<Iterator, store_type>(std::begin(ordered), std::end(ordered)),
         _ordered_values(std::forward<default_container<value_type>>(ordered)),
         _previousSelectFunctor(std::forward<PreviousSelectFunctor>(previousSelectFunctor))
         {
@@ -2842,7 +2847,7 @@ auto range(T start, std::size_t count) -> decltype(auto)
 
     std::generate(std::begin(c), std::end(c), [&start](){ return start++; });
 
-    return relinx_object<decltype(std::begin(c)), decltype(c)>(std::move(c));
+    return relinx_object<decltype(std::begin(c))>(std::move(c));
 }
 
 /**
