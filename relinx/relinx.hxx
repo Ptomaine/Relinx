@@ -1044,7 +1044,7 @@ struct invalid_operation : public std::logic_error { invalid_operation(const std
 
 template<typename Iterator, typename PreviousSelectFunctor> class relinx_object_ordered;
 
-template<typename Iterator, typename StoreType = default_container<typename std::decay<decltype(*Iterator())>::type>, typename ContainerType = default_container<typename std::decay<decltype(*Iterator())>::type>>
+template<typename Iterator, typename StoreType = default_container<typename std::decay<decltype(*Iterator())>::type>, typename ContainerType = StoreType>
 class relinx_object
 {
 public:
