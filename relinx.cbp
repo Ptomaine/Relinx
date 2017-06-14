@@ -49,9 +49,11 @@
 					<Add option="-pedantic" />
 					<Add option="-Wextra" />
 					<Add option="-Wall" />
+					<Add option="-std=c++1z" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
+					<Add option="-static" />
 				</Linker>
 			</Target>
 			<Target title="Debug-GCC">
@@ -60,8 +62,12 @@
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
+					<Add option="-std=c++1z" />
 					<Add option="-g" />
 				</Compiler>
+				<Linker>
+					<Add option="-static" />
+				</Linker>
 			</Target>
 		</Build>
 		<Compiler>

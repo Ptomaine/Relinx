@@ -29,6 +29,7 @@ SOFTWARE.
 #include <functional>
 #include <iterator>
 #include <list>
+#include <memory>
 #include <numeric>
 #include <sstream>
 #include <vector>
@@ -1042,13 +1043,13 @@ struct no_elements : public std::logic_error { no_elements(const std::string &wh
 struct not_found : public std::logic_error { not_found(const std::string &what) : std::logic_error(what) {} }; ///< The exeption that is thrown when there are no elements found using a filter functor on the targeting sequence
 struct invalid_operation : public std::logic_error { invalid_operation(const std::string &what) : std::logic_error(what) {} }; ///< The exeption that is thrown when there is no complience to the performing action
 
-template<typename Iterator, typename PreviousSelectFunctor> class relinx_object_ordered;
+template<typename ParentRelinxType, typename Iterator, typename PreviousSelectFunctor> class relinx_object_ordered;
 
-template<typename Iterator, typename StoreType = default_container<typename std::decay<decltype(*Iterator())>::type>, typename ContainerType = StoreType>
-class relinx_object
+template<typename ParentRelinxType, typename Iterator, typename ContainerType = default_container<typename std::decay<decltype(*Iterator())>::type>>
+class relinx_object : public std::enable_shared_from_this<relinx_object<ParentRelinxType, Iterator, ContainerType>>
 {
 public:
-    using self_type = relinx_object<Iterator, ContainerType>;
+    using self_type = relinx_object<ParentRelinxType, Iterator, ContainerType>;
     using value_type = typename std::decay<decltype(*Iterator())>::type;
     using iterator_type = typename std::decay<Iterator>::type;
 
@@ -1057,9 +1058,10 @@ public:
     auto operator =(const relinx_object &) -> relinx_object & = delete;
     relinx_object(relinx_object &&) = default;
 
-    relinx_object(iterator_type begin, iterator_type end) noexcept : _begin(begin), _end(end) {}
-    relinx_object(iterator_type begin, iterator_type end, StoreType &&container, StoreType &&def_val_container) noexcept : _begin(begin), _end(end), _container_store(std::forward<StoreType>(container)), _def_val_container_store(std::forward<StoreType>(def_val_container)) {}
-    relinx_object(ContainerType &&container) noexcept : _container(std::forward<ContainerType>(container)), _begin(std::begin(_container)), _end(std::end(_container)) {}
+    relinx_object(std::shared_ptr<ParentRelinxType> &&parent_relinx_object_ptr, iterator_type begin, iterator_type end) noexcept : _begin(begin), _end(end), _parent_relinx_object_ptr(std::forward<std::shared_ptr<ParentRelinxType>>(parent_relinx_object_ptr)) { }
+    relinx_object(std::shared_ptr<ParentRelinxType> &&parent_relinx_object_ptr, ContainerType &&container) noexcept : _container(std::forward<ContainerType>(container)), _begin(std::begin(_container)), _end(std::end(_container)), _parent_relinx_object_ptr(std::forward<std::shared_ptr<ParentRelinxType>>(parent_relinx_object_ptr)) { }
+
+    ~relinx_object() = default;
 
     auto begin() const noexcept -> decltype(auto)
     {
@@ -1260,11 +1262,12 @@ public:
         \endcode
     */
     template<typename CastType>
-    auto cast() const noexcept -> decltype(auto)
+    auto cast() noexcept -> decltype(auto)
     {
         using adapter_type = transform_iterator_adapter<iterator_type, std::function<CastType(const value_type&)>>;
+        using next_relinx_object = relinx_object<self_type, adapter_type, ContainerType>;
 
-        return relinx_object<adapter_type, ContainerType>(adapter_type(_begin, _end, [](auto &&v){ return static_cast<CastType>(v); }), adapter_type(_end, _end, nullptr), std::move(_container), std::move(_def_val_container));
+        return std::make_shared<next_relinx_object>(std::enable_shared_from_this<self_type>::shared_from_this(), adapter_type(_begin, _end, [](auto &&v){ return static_cast<CastType>(v); }), adapter_type(_end, _end, nullptr));
     }
 
     /**
@@ -1279,19 +1282,27 @@ public:
         \return returns concatenated relinc_object.
     */
     template<typename Container>
-    auto concat(Container &&c) const noexcept -> decltype(auto)
+    auto concat(Container &&c) noexcept -> decltype(auto)
     {
         using adapter_type = concat_iterator_adapter<iterator_type, typename std::decay<decltype(std::begin(c))>::type>;
 
         auto end_it = std::end(c);
 
-        return relinx_object<adapter_type, ContainerType>(adapter_type(_begin, _end, std::begin(c), end_it), adapter_type(_end, _end, end_it, end_it), std::move(_container), std::move(_def_val_container));
+        using next_relinx_type = relinx_object<self_type, adapter_type, ContainerType>;
+
+        return std::make_shared<next_relinx_type>(std::enable_shared_from_this<self_type>::shared_from_this(), adapter_type(_begin, _end, std::begin(c), end_it), adapter_type(_end, _end, end_it, end_it));
     }
 
     template<typename T>
-    auto concat(std::initializer_list<T> &&container) const noexcept -> decltype(auto)
+    auto concat(std::initializer_list<T> &&container) noexcept -> decltype(auto)
     {
         return concat<std::initializer_list<T>>(std::forward<std::initializer_list<T>>(container));
+    }
+
+    template<typename T>
+    auto concat(std::shared_ptr<T> &&relinx_object) noexcept -> decltype(auto)
+    {
+        return concat(*relinx_object);
     }
 
     /**
@@ -1417,11 +1428,13 @@ public:
             auto res6 = from({1, 2, 3}).cycle().skip(2).take(5); //result: {3, 1, 2, 3, 1}
             \endcode
     */
-    auto cycle(std::ptrdiff_t times = -1) const noexcept -> decltype(auto)
+    auto cycle(std::ptrdiff_t times = -1) noexcept -> decltype(auto)
     {
         using adapter_type = cycle_iterator_adapter<decltype(_begin)>;
 
-        return relinx_object<adapter_type, ContainerType>(adapter_type(_begin, _end, times), adapter_type(_end, _end, times), std::move(_container), std::move(_def_val_container));
+        using next_relinx_type = relinx_object<self_type, adapter_type, ContainerType>;
+
+        return std::make_shared<next_relinx_type>(std::enable_shared_from_this<self_type>::shared_from_this(), adapter_type(_begin, _end, times), adapter_type(_end, _end, times));
     }
 
     /**
@@ -1433,7 +1446,7 @@ public:
 
         \return An relinx_object that contains default_value if source is empty; otherwise, source.
     */
-    auto default_if_empty(value_type default_value = value_type()) const noexcept -> decltype(auto)
+    auto default_if_empty(value_type default_value = value_type()) noexcept -> decltype(auto)
     {
         return concat(_begin == _end ? (_def_val_container = {default_value}) : _def_val_container);
     }
@@ -1451,12 +1464,13 @@ public:
         \return The relinx_object that contains distinct values.
     */
     template<typename KeyFunctor = std::function<value_type(const value_type &)>>
-    auto distinct(KeyFunctor &&keyFunctor = [](auto &&v) { return v; }) const noexcept -> decltype(auto)
+    auto distinct(KeyFunctor &&keyFunctor = [](auto &&v) { return v; }) noexcept -> decltype(auto)
     {
         using ret_type = typename std::decay<decltype(keyFunctor(value_type()))>::type;
         using adapter_type = distinct_iterator_adapter<iterator_type, std::function<ret_type(const value_type &)>>;
+        using next_relinx_type = relinx_object<self_type, adapter_type, ContainerType>;
 
-        return relinx_object<adapter_type, ContainerType>(adapter_type(_begin, _end, std::forward<KeyFunctor>(keyFunctor)), adapter_type(_end, _end, nullptr), std::move(_container), std::move(_def_val_container));
+        return std::make_shared<next_relinx_type>(std::enable_shared_from_this<self_type>::shared_from_this(), adapter_type(_begin, _end, std::forward<KeyFunctor>(keyFunctor)), adapter_type(_end, _end, nullptr));
     }
 
     /** \brief Returns the element at a specified index in a sequence.
@@ -1509,17 +1523,18 @@ public:
         \return A relinx_object that contains the set difference of the elements of two sequences.
     */
     template<typename Container>
-    auto except(Container &&container, std::function<bool(const value_type&, const value_type&)> &&compareFunctor = [](auto &&a, auto &&b) { return a == b; }) const noexcept -> decltype(auto)
+    auto except(Container &&container, std::function<bool(const value_type&, const value_type&)> &&compareFunctor = [](auto &&a, auto &&b) { return a == b; }) noexcept -> decltype(auto)
     {
         using adapter_type = except_iterator_adapter<iterator_type, decltype(std::begin(container)), std::function<bool(const value_type&, const value_type&)>>;
+        using next_relinx_type = relinx_object<self_type, adapter_type, ContainerType>;
 
         auto end_it = std::end(container);
 
-        return relinx_object<adapter_type, ContainerType>(adapter_type(_begin, _end, std::begin(container), end_it, std::forward<std::function<bool(const value_type&, const value_type&)>>(compareFunctor)), adapter_type(_end, _end, end_it, end_it, nullptr), std::move(_container), std::move(_def_val_container));
+        return std::make_shared<next_relinx_type>(std::enable_shared_from_this<self_type>::shared_from_this(), adapter_type(_begin, _end, std::begin(container), end_it, std::forward<std::function<bool(const value_type&, const value_type&)>>(compareFunctor)), adapter_type(_end, _end, end_it, end_it, nullptr));
     }
 
     template<typename T>
-    auto except(std::initializer_list<T> &&container, std::function<bool(const value_type&, const value_type&)> &&compareFunctor = [](auto &&a, auto &&b) { return a == b; }) const noexcept -> decltype(auto)
+    auto except(std::initializer_list<T> &&container, std::function<bool(const value_type&, const value_type&)> &&compareFunctor = [](auto &&a, auto &&b) { return a == b; }) noexcept -> decltype(auto)
     {
         return except<std::initializer_list<T>>(std::forward<std::initializer_list<T>>(container), std::forward<std::function<bool(const value_type&, const value_type&)>>(compareFunctor));
     }
@@ -1646,7 +1661,7 @@ public:
         \return A relinx_object that contains grouped elements by a key in a std::map container where values of each key is a std::vector container.
     */
     template<typename KeyFunctor>
-    auto group_by(KeyFunctor &&keyFunctor) const noexcept -> decltype(auto)
+    auto group_by(KeyFunctor &&keyFunctor) noexcept -> decltype(auto)
     {
         using KeyType = typename std::decay<decltype(keyFunctor(value_type()))>::type;
 
@@ -1661,7 +1676,9 @@ public:
             ++begin;
         }
 
-        return relinx_object<decltype(std::begin(group_map)), ContainerType, decltype(group_map)>(std::move(group_map));
+        using next_relinx_type = relinx_object<self_type, decltype(std::begin(group_map)), decltype(group_map)>;
+
+        return std::make_shared<next_relinx_type>(std::enable_shared_from_this<self_type>::shared_from_this(), std::move(group_map));
     }
 
     /** \brief Correlates the elements of two sequences based on key equality, and groups the results.
@@ -1680,24 +1697,25 @@ public:
         \return A relinx_object that contains joined and grouped elements.
     */
     template<typename Container, typename ThisKeyFunctor, typename OtherKeyFunctor, typename ResultFunctor, typename CompareFunctor>
-    auto group_join(Container &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, CompareFunctor &&compareFunctor, bool leftJoin = false) const noexcept -> decltype(auto)
+    auto group_join(Container &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, CompareFunctor &&compareFunctor, bool leftJoin = false) noexcept -> decltype(auto)
     {
         using joinIteratorType = typename std::decay<decltype(std::begin(container))>::type;
         using joinType = typename std::decay<decltype(*joinIteratorType())>::type;
         using thisKeyType = typename std::decay<decltype(thisKeyFunctor(value_type()))>::type;
         using otherKeyType = typename std::decay<decltype(otherKeyFunctor(joinType()))>::type;
         using resultType = typename std::decay<decltype(resultFunctor(value_type(), default_container<joinType>()))>::type;
-
         using adapter_type = group_join_iterator_adapter<iterator_type,
                                                     joinIteratorType,
                                                     std::function<thisKeyType(const value_type&)>,
                                                     std::function<otherKeyType(const joinType&)>,
                                                     std::function<resultType(const value_type&, const default_container<joinType>&)>,
                                                     std::function<bool(const thisKeyType&, const otherKeyType&)>>;
+        using next_relinx_type = relinx_object<self_type, adapter_type, ContainerType>;
 
         auto end_it = std::end(container);
 
-        return relinx_object<adapter_type, ContainerType>(adapter_type
+        return std::make_shared<next_relinx_type>(std::enable_shared_from_this<self_type>::shared_from_this(),
+                                       adapter_type
                                             (
                                                 _begin,
                                                 _end,
@@ -1720,11 +1738,11 @@ public:
                                                 nullptr,
                                                 nullptr,
                                                 leftJoin
-                                             ), std::move(_container), std::move(_def_val_container));
+                                             ));
     }
 
     template<typename T, typename ThisKeyFunctor, typename OtherKeyFunctor, typename ResultFunctor, typename CompareFunctor>
-    auto group_join(std::initializer_list<T> &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, CompareFunctor &&compareFunctor, bool leftJoin = false) const noexcept -> decltype(auto)
+    auto group_join(std::initializer_list<T> &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, CompareFunctor &&compareFunctor, bool leftJoin = false) noexcept -> decltype(auto)
     {
         return group_join<std::initializer_list<T>,
                             ThisKeyFunctor,
@@ -1754,7 +1772,7 @@ public:
         \return A relinx_object that contains joined and grouped elements.
     */
     template<typename Container, typename ThisKeyFunctor, typename OtherKeyFunctor, typename ResultFunctor>
-    auto group_join(Container &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, bool leftJoin = false) const noexcept -> decltype(auto)
+    auto group_join(Container &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, bool leftJoin = false) noexcept -> decltype(auto)
     {
         return group_join(std::forward<Container>(container),
                     std::forward<ThisKeyFunctor>(thisKeyFunctor),
@@ -1765,7 +1783,7 @@ public:
     }
 
     template<typename T, typename ThisKeyFunctor, typename OtherKeyFunctor, typename ResultFunctor>
-    auto group_join(std::initializer_list<T> &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, bool leftJoin = false) const noexcept -> decltype(auto)
+    auto group_join(std::initializer_list<T> &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, bool leftJoin = false) noexcept -> decltype(auto)
     {
         return group_join<std::initializer_list<T>,
                             ThisKeyFunctor,
@@ -1790,17 +1808,18 @@ public:
         \return A relinx_object that holds a set of intersected elements.
     */
     template<typename Container>
-    auto intersect_with(Container &&container, std::function<bool(const value_type&, const value_type&)> &&compareFunctor = [](auto &&a, auto &&b) { return a == b; }) const noexcept -> decltype(auto)
+    auto intersect_with(Container &&container, std::function<bool(const value_type&, const value_type&)> &&compareFunctor = [](auto &&a, auto &&b) { return a == b; }) noexcept -> decltype(auto)
     {
         using adapter_type = intersect_iterator_adapter<iterator_type, decltype(std::begin(container)), std::function<bool(const value_type&, const value_type&)>>;
+        using next_relinx_type = relinx_object<self_type, adapter_type, ContainerType>;
 
         auto end_it = std::end(container);
 
-        return relinx_object<adapter_type, ContainerType>(adapter_type(_begin, _end, std::begin(container), end_it, std::forward<std::function<bool(const value_type&, const value_type&)>>(compareFunctor)), adapter_type(_end, _end, end_it, end_it, nullptr), std::move(_container), std::move(_def_val_container));
+        return std::make_shared<next_relinx_type>(std::enable_shared_from_this<self_type>::shared_from_this(), adapter_type(_begin, _end, std::begin(container), end_it, std::forward<std::function<bool(const value_type&, const value_type&)>>(compareFunctor)), adapter_type(_end, _end, end_it, end_it, nullptr));
     }
 
     template<typename T>
-    auto intersect_with(std::initializer_list<T> &&container, std::function<bool(const value_type&, const value_type&)> &&compareFunctor = [](auto &&a, auto &&b) { return a == b; }) const noexcept -> decltype(auto)
+    auto intersect_with(std::initializer_list<T> &&container, std::function<bool(const value_type&, const value_type&)> &&compareFunctor = [](auto &&a, auto &&b) { return a == b; }) noexcept -> decltype(auto)
     {
         return intersect_with<std::initializer_list<T>>(std::forward<std::initializer_list<T>>(container), std::forward<std::function<bool(const value_type&, const value_type&)>>(compareFunctor));
     }
@@ -1821,7 +1840,7 @@ public:
         \return A relinx_object that contains joined elements.
     */
     template<typename Container, typename ThisKeyFunctor, typename OtherKeyFunctor, typename ResultFunctor, typename CompareFunctor>
-    auto join(Container &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, CompareFunctor &&compareFunctor, bool leftJoin = false) const noexcept -> decltype(auto)
+    auto join(Container &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, CompareFunctor &&compareFunctor, bool leftJoin = false) noexcept -> decltype(auto)
     {
         using joinIteratorType = typename std::decay<decltype(std::begin(container))>::type;
         using joinType = typename std::decay<decltype(*joinIteratorType())>::type;
@@ -1835,10 +1854,12 @@ public:
                                               std::function<otherKeyType(const joinType&)>,
                                               std::function<resultType(const value_type&, const joinType&)>,
                                               std::function<bool(const thisKeyType&, const otherKeyType&)>>;
+        using next_relinx_type = relinx_object<self_type, adapter_type, ContainerType>;
 
         auto end_it = std::end(container);
 
-        return relinx_object<adapter_type, ContainerType>(adapter_type
+        return std::make_shared<next_relinx_type>(std::enable_shared_from_this<self_type>::shared_from_this(),
+                                      adapter_type
                                             (
                                                 _begin,
                                                 _end,
@@ -1861,11 +1882,11 @@ public:
                                                 nullptr,
                                                 nullptr,
                                                 leftJoin
-                                             ), std::move(_container), std::move(_def_val_container));
+                                             ));
     }
 
     template<typename T, typename ThisKeyFunctor, typename OtherKeyFunctor, typename ResultFunctor, typename CompareFunctor>
-    auto join(std::initializer_list<T> &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, CompareFunctor &&compareFunctor, bool leftJoin = false) const noexcept -> decltype(auto)
+    auto join(std::initializer_list<T> &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, CompareFunctor &&compareFunctor, bool leftJoin = false) noexcept -> decltype(auto)
     {
         return join<std::initializer_list<T>,
                     ThisKeyFunctor,
@@ -1887,7 +1908,7 @@ public:
         \note See join.
     */
     template<typename Container, typename ThisKeyFunctor, typename OtherKeyFunctor, typename ResultFunctor>
-    auto join(Container &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, bool leftJoin = false) const noexcept -> decltype(auto)
+    auto join(Container &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, bool leftJoin = false) noexcept -> decltype(auto)
     {
         return join(std::forward<Container>(container),
                     std::forward<ThisKeyFunctor>(thisKeyFunctor),
@@ -1898,7 +1919,7 @@ public:
     }
 
     template<typename T, typename ThisKeyFunctor, typename OtherKeyFunctor, typename ResultFunctor>
-    auto join(std::initializer_list<T> &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, bool leftJoin = false) const noexcept -> decltype(auto)
+    auto join(std::initializer_list<T> &&container, ThisKeyFunctor &&thisKeyFunctor, OtherKeyFunctor &&otherKeyFunctor, ResultFunctor &&resultFunctor, bool leftJoin = false) noexcept -> decltype(auto)
     {
         return join<std::initializer_list<T>,
                     ThisKeyFunctor,
@@ -2082,19 +2103,21 @@ public:
         Any other casts can be emulated using \ref select and \ref where methods.
     */
     template<typename CastType, typename = typename std::enable_if<std::is_pointer<CastType>::value>::type>
-    auto of_type() const noexcept -> decltype(auto)
+    auto of_type() noexcept -> decltype(auto)
     {
-        return select([](auto &&i) { return dynamic_cast<CastType>(i); }).where([](auto &&i) { return i != nullptr; });
+        return select([](auto &&i) { return dynamic_cast<CastType>(i); })->where([](auto &&i) { return i != nullptr; });
     }
 
     template<typename SelectFunctor, typename SortFunctor>
-    auto order_by(SelectFunctor &&selectFunctor, SortFunctor &&sortFunctor) const noexcept -> decltype(auto)
+    auto order_by(SelectFunctor &&selectFunctor, SortFunctor &&sortFunctor) noexcept -> decltype(auto)
     {
         default_container<value_type> sorted(_begin, _end);
 
         std::sort(std::begin(sorted), std::end(sorted), [&selectFunctor, &sortFunctor](auto &&a, auto &&b) { return sortFunctor(selectFunctor(a), selectFunctor(b)); });
 
-        return relinx_object_ordered<decltype(std::begin(sorted)), SelectFunctor>(std::move(sorted), std::forward<SelectFunctor>(selectFunctor));
+        using next_relinx_type = relinx_object_ordered<self_type, decltype(std::begin(sorted)), SelectFunctor>;
+
+        return std::make_shared<next_relinx_type>(std::enable_shared_from_this<self_type>::shared_from_this(), std::move(sorted), std::forward<SelectFunctor>(selectFunctor));
     }
 
     /** \brief Sorts the elements of a sequence in ascending order according to a key.
@@ -2106,7 +2129,7 @@ public:
         \return A relinx_object whose elements are sorted according to a key.
     */
     template<typename SelectFunctor = std::function<value_type(const value_type&)>>
-    auto order_by(SelectFunctor &&selectFunctor = [](auto &&v) { return v; }) const noexcept -> decltype(auto)
+    auto order_by(SelectFunctor &&selectFunctor = [](auto &&v) { return v; }) noexcept -> decltype(auto)
     {
         return order_by(std::forward<SelectFunctor>(selectFunctor), std::less<typename std::decay<decltype(selectFunctor(value_type()))>::type>());
     }
@@ -2120,7 +2143,7 @@ public:
         \return A relinx_object whose elements are sorted in descending order according to a key.
     */
     template<typename SelectFunctor = std::function<value_type(const value_type&)>>
-    auto order_by_descending(SelectFunctor &&selectFunctor = [](auto &&v) { return v; }) const noexcept -> decltype(auto)
+    auto order_by_descending(SelectFunctor &&selectFunctor = [](auto &&v) { return v; }) noexcept -> decltype(auto)
     {
         return order_by(std::forward<SelectFunctor>(selectFunctor), std::greater<typename std::decay<decltype(selectFunctor(value_type()))>::type>());
     }
@@ -2131,13 +2154,15 @@ public:
 
         \return A sequence whose elements correspond to those of the input sequence in reverse order.
     */
-    auto reverse() const noexcept -> decltype(auto)
+    auto reverse() noexcept -> decltype(auto)
     {
         default_container<value_type> c(_begin, _end);
 
         std::reverse(std::begin(c), std::end(c));
 
-        return relinx_object<decltype(std::begin(c)), ContainerType>(std::move(c));
+        using next_relinx_type = relinx_object<self_type, decltype(std::begin(c)), ContainerType>;
+
+        return std::make_shared<next_relinx_type>(std::enable_shared_from_this<self_type>::shared_from_this(), std::move(c));
     }
 
     /** \brief Projects each element of a sequence into a new form.
@@ -2160,12 +2185,14 @@ public:
         \return An relinx_object whose elements are the result of invoking the transform functor on each element of source.
     */
     template<typename TransformFunctor>
-    auto select(TransformFunctor &&transformFunctor) const noexcept -> decltype(auto)
+    auto select(TransformFunctor &&transformFunctor) noexcept -> decltype(auto)
     {
         using ret_type = decltype(transformFunctor(value_type()));
         using adapter_type = transform_iterator_adapter<iterator_type, std::function<ret_type(const value_type&)>>;
 
-        return relinx_object<adapter_type, ContainerType>(adapter_type(_begin, _end, std::forward<TransformFunctor>(transformFunctor)), adapter_type(_end, _end, nullptr), std::move(_container), std::move(_def_val_container));
+        using next_relinx_type = relinx_object<self_type, adapter_type, ContainerType>;
+
+        return std::make_shared<next_relinx_type>(std::enable_shared_from_this<self_type>::shared_from_this(), adapter_type(_begin, _end, std::forward<TransformFunctor>(transformFunctor)), adapter_type(_end, _end, nullptr));
     }
 
     /** \brief Projects each element of a sequence into a new form.
@@ -2179,7 +2206,7 @@ public:
         \return An relinx_object whose elements are the result of invoking the transform functor on each element of source.
     */
     template<typename TransformFunctor>
-    auto select_i(TransformFunctor &&transformFunctor) const noexcept -> decltype(auto)
+    auto select_i(TransformFunctor &&transformFunctor) noexcept -> decltype(auto)
     {
         return _indexer = 0, select([this, &transformFunctor](auto &&v) { return transformFunctor(std::forward<decltype(v)>(v), _indexer++); });
     }
@@ -2222,12 +2249,13 @@ public:
         \return A \ref relinx_object whose elements are the result of invoking the one-to-many transform function on each element of the input sequence.
     */
     template<typename ContainerSelectorFunctor>
-    auto select_many(ContainerSelectorFunctor &&containerSelectorFunctor) const noexcept -> decltype(auto)
+    auto select_many(ContainerSelectorFunctor &&containerSelectorFunctor) noexcept -> decltype(auto)
     {
         using cont_type = decltype(containerSelectorFunctor(value_type()));
         using adapter_type = select_many_iterator_adapter<iterator_type, std::function<cont_type(const value_type&)>>;
+        using next_relinx_type = relinx_object<self_type, adapter_type, ContainerType>;
 
-        return relinx_object<adapter_type, ContainerType>(adapter_type(_begin, _end, std::forward<ContainerSelectorFunctor>(containerSelectorFunctor)), adapter_type(_end, _end, nullptr), std::move(_container), std::move(_def_val_container));
+        return std::make_shared<next_relinx_type>(std::enable_shared_from_this<self_type>::shared_from_this(), adapter_type(_begin, _end, std::forward<ContainerSelectorFunctor>(containerSelectorFunctor)), adapter_type(_end, _end, nullptr));
     }
 
     /** \brief Projects each element of a sequence to a container and flattens the resulting sequences into one sequence.
@@ -2241,7 +2269,7 @@ public:
         \return An relinx_object whose elements are the result of invoking the one-to-many transform function on each element of the input sequence.
     */
     template<typename ContainerSelectorFunctor>
-    auto select_many_i(ContainerSelectorFunctor &&containerSelectorFunctor) const noexcept -> decltype(auto)
+    auto select_many_i(ContainerSelectorFunctor &&containerSelectorFunctor) noexcept -> decltype(auto)
     {
         return _indexer = 0, select_many([this, &containerSelectorFunctor](auto &&v) { return containerSelectorFunctor(std::forward<decltype(v)>(v), _indexer++); });
     }
@@ -2386,7 +2414,7 @@ public:
     {
         while (_begin != _end && skip-- > 0) ++_begin;
 
-        return *this;
+        return std::enable_shared_from_this<self_type>::shared_from_this();
     }
 
     /** \brief Bypasses elements in a sequence as long as a specified condition is true and then returns the remaining elements.
@@ -2404,7 +2432,7 @@ public:
     {
         while (_begin != _end && skipFunctor(*_begin)) ++_begin;
 
-        return *this;
+        return std::enable_shared_from_this<self_type>::shared_from_this();
     }
 
     /** \brief Exactly the same as \ref skip_while.
@@ -2462,11 +2490,12 @@ public:
 
         \return A relinx_object that contains the specified number of elements from the start of the input sequence.
     */
-    auto take(std::ptrdiff_t limit) const noexcept -> decltype(auto)
+    auto take(std::ptrdiff_t limit) noexcept -> decltype(auto)
     {
         using adapter_type = limit_iterator_adapter<iterator_type, std::function<bool(const value_type&)>>;
+        using next_relinx_type = relinx_object<self_type, adapter_type, ContainerType>;
 
-        return _indexer = limit, relinx_object<adapter_type, ContainerType>(adapter_type(_begin, _end, [this](auto &&){ return _indexer-- > 0; }), adapter_type(_end, _end, nullptr), std::move(_container), std::move(_def_val_container));
+        return _indexer = limit, std::make_shared<next_relinx_type>(std::enable_shared_from_this<self_type>::shared_from_this(), adapter_type(_begin, _end, [this](auto &&){ return _indexer-- > 0; }), adapter_type(_end, _end, nullptr));
     }
 
     /** \brief Returns elements from a sequence as long as a specified condition is true.
@@ -2480,11 +2509,12 @@ public:
         \return An relinx_object that contains the elements from the input sequence that occur before the element at which the test no longer passes.
     */
     template<typename LimitFunctor>
-    auto take_while(LimitFunctor &&limitFunctor) const noexcept -> decltype(auto)
+    auto take_while(LimitFunctor &&limitFunctor) noexcept -> decltype(auto)
     {
         using adapter_type = limit_iterator_adapter<iterator_type, std::function<bool(const value_type&)>>;
+        using next_relinx_type = relinx_object<self_type, adapter_type, ContainerType>;
 
-        return relinx_object<adapter_type, ContainerType>(adapter_type(_begin, _end, std::forward<LimitFunctor>(limitFunctor)), adapter_type(_end, _end, nullptr), std::move(_container), std::move(_def_val_container));
+        return std::make_shared<next_relinx_type>(std::enable_shared_from_this<self_type>::shared_from_this(), adapter_type(_begin, _end, std::forward<LimitFunctor>(limitFunctor)), adapter_type(_end, _end, nullptr));
     }
 
     /** \brief Exactly the same as \ref take_while.
@@ -2498,7 +2528,7 @@ public:
         \return An relinx_object that contains the elements from the input sequence that occur before the element at which the test no longer passes.
     */
     template<typename LimitFunctor>
-    auto take_while_i(LimitFunctor &&limitFunctor) const noexcept -> decltype(auto)
+    auto take_while_i(LimitFunctor &&limitFunctor) noexcept -> decltype(auto)
     {
         return _indexer = 0, take_while([this, &limitFunctor](auto &&v){ return limitFunctor(std::forward<decltype(v)>(v), _indexer++); });
     }
@@ -2622,13 +2652,13 @@ public:
         \return A relinx_object that contains the elements from both input sequences, excluding duplicates.
     */
     template<typename Container, typename KeyFunctor = std::function<value_type(const value_type &)>>
-    auto union_with(Container &&container, KeyFunctor &&keyFunctor = [](auto &&v) { return v; }) const noexcept -> decltype(auto)
+    auto union_with(Container &&container, KeyFunctor &&keyFunctor = [](auto &&v) { return v; }) noexcept -> decltype(auto)
     {
-        return concat(std::forward<Container>(container)).distinct(std::forward<KeyFunctor>(keyFunctor));
+        return concat(std::forward<Container>(container))->distinct(std::forward<KeyFunctor>(keyFunctor));
     }
 
     template<typename T>
-    auto union_with(std::initializer_list<T> &&container) const noexcept -> decltype(auto)
+    auto union_with(std::initializer_list<T> &&container) noexcept -> decltype(auto)
     {
         return union_with<std::initializer_list<T>>(std::forward<std::initializer_list<T>>(container));
     }
@@ -2644,11 +2674,12 @@ public:
         \return A relinx_object that contains elements from the input sequence that satisfy the condition.
     */
     template<typename FilterFunctor>
-    auto where(FilterFunctor &&filterFunctor) const noexcept -> decltype(auto)
+    auto where(FilterFunctor &&filterFunctor) noexcept -> decltype(auto)
     {
         using adapter_type = filter_iterator_adapter<iterator_type, std::function<bool(const value_type&)>>;
+        using next_relinx_type = relinx_object<self_type, adapter_type, ContainerType>;
 
-        return relinx_object<adapter_type, ContainerType>(adapter_type(_begin, _end, std::forward<FilterFunctor>(filterFunctor)), adapter_type(_end, _end, nullptr), std::move(_container), std::move(_def_val_container));
+        return std::make_shared<next_relinx_type>(std::enable_shared_from_this<self_type>::shared_from_this(), adapter_type(_begin, _end, std::forward<FilterFunctor>(filterFunctor)), adapter_type(_end, _end, nullptr));
     }
 
     /** \brief The same as \ref where but a filter functor takes an index as the second parameter.
@@ -2662,7 +2693,7 @@ public:
         \return A relinx_object that contains elements from the input sequence that satisfy the condition.
     */
     template<typename FilterFunctor>
-    auto where_i(FilterFunctor &&filterFunctor) const noexcept -> decltype(auto)
+    auto where_i(FilterFunctor &&filterFunctor) noexcept -> decltype(auto)
     {
         return _indexer = 0, where([this, &filterFunctor](auto &&v) { return filterFunctor(v, _indexer++); });
     }
@@ -2678,20 +2709,21 @@ public:
         \return
     */
     template<typename Container, typename ResultFunctor>
-    auto zip(Container &&container, ResultFunctor &&resultFunctor) const noexcept -> decltype(auto)
+    auto zip(Container &&container, ResultFunctor &&resultFunctor) noexcept -> decltype(auto)
     {
         using container_iterator_type = decltype(std::begin(container));
         using container_type = typename std::decay<decltype(*std::begin(container))>::type;
         using ret_type = decltype(resultFunctor(value_type(), container_type()));
         using adapter_type = zip_iterator_adapter<iterator_type, container_iterator_type, std::function<ret_type(const value_type&, const container_type&)>>;
+        using next_relinx_type = relinx_object<self_type, adapter_type, ContainerType>;
 
         auto end_it = std::end(container);
 
-        return relinx_object<adapter_type, ContainerType>(adapter_type(_begin, _end, std::begin(container), end_it, std::forward<ResultFunctor>(resultFunctor)), adapter_type(_end, _end, end_it, end_it, nullptr), std::move(_container), std::move(_def_val_container));
+        return std::make_shared<next_relinx_type>(std::enable_shared_from_this<self_type>::shared_from_this(), adapter_type(_begin, _end, std::begin(container), end_it, std::forward<ResultFunctor>(resultFunctor)), adapter_type(_end, _end, end_it, end_it, nullptr));
     }
 
     template<typename T, typename ResultFunctor>
-    auto zip(std::initializer_list<T> &&container, ResultFunctor &&resultFunctor) const noexcept -> decltype(auto)
+    auto zip(std::initializer_list<T> &&container, ResultFunctor &&resultFunctor) noexcept -> decltype(auto)
     {
         return zip<std::initializer_list<T>, ResultFunctor>(std::forward<std::initializer_list<T>>(container), std::forward<ResultFunctor>(resultFunctor));
     }
@@ -2704,6 +2736,7 @@ protected:
 
     Iterator _begin;
     Iterator _end;
+    std::shared_ptr<ParentRelinxType> _parent_relinx_object_ptr;
 
     template<typename ConditionFunctor>
     auto _last(ConditionFunctor &&conditionFunctor) const noexcept -> decltype(auto)
@@ -2721,27 +2754,24 @@ protected:
 
         return lastValueIt;
     }
-
-    StoreType _container_store;
-    StoreType _def_val_container_store;
 };
 
-template<typename Iterator, typename PreviousSelectFunctor>
-class relinx_object_ordered : public relinx_object<Iterator, default_container<typename std::decay<decltype(*Iterator())>::type>>
+template<typename ParentRelinxType, typename Iterator, typename PreviousSelectFunctor>
+class relinx_object_ordered : public relinx_object<ParentRelinxType, Iterator, default_container<typename std::decay<decltype(*Iterator())>::type>>
 {
 public:
-    using self_type = relinx_object_ordered<Iterator, PreviousSelectFunctor>;
+    using self_type = relinx_object_ordered<ParentRelinxType, Iterator, PreviousSelectFunctor>;
     using value_type = typename std::decay<decltype(*Iterator())>::type;
-    using store_type = default_container<value_type>;
-    using base = relinx_object<Iterator, store_type>;
+    using container_type = default_container<value_type>;
+    using base = relinx_object<ParentRelinxType, Iterator, container_type>;
 
     relinx_object_ordered() = delete;
     relinx_object_ordered(const relinx_object_ordered &) = delete;
     auto operator =(const relinx_object_ordered &) -> relinx_object_ordered & = delete;
     relinx_object_ordered(relinx_object_ordered &&) = default;
 
-    relinx_object_ordered(default_container<value_type> &&ordered, PreviousSelectFunctor &&previousSelectFunctor) :
-        relinx_object<Iterator, store_type>(std::begin(ordered), std::end(ordered)),
+    relinx_object_ordered(std::shared_ptr<ParentRelinxType> &&parent_relinx_object_ptr, default_container<value_type> &&ordered, PreviousSelectFunctor &&previousSelectFunctor) :
+        base(std::forward<std::shared_ptr<ParentRelinxType>>(parent_relinx_object_ptr), std::begin(ordered), std::end(ordered)),
         _ordered_values(std::forward<default_container<value_type>>(ordered)),
         _previousSelectFunctor(std::forward<PreviousSelectFunctor>(previousSelectFunctor))
         {
@@ -2752,7 +2782,9 @@ public:
     {
         std::sort(std::begin(_ordered_values), std::end(_ordered_values), [&selectFunctor, &sortFunctor](auto &&a, auto &&b) { return sortFunctor(selectFunctor(a), selectFunctor(b)); });
 
-        return relinx_object_ordered<Iterator, SelectFunctor>(std::move(_ordered_values), std::forward<SelectFunctor>(selectFunctor));
+        using next_relinx_type = relinx_object_ordered<base, Iterator, SelectFunctor>;
+
+        return std::make_shared<next_relinx_type>(std::enable_shared_from_this<base>::shared_from_this(), std::move(_ordered_values), std::forward<SelectFunctor>(selectFunctor));
     }
 
     template<typename SelectFunctor = std::function<value_type(const value_type&)>>
@@ -2785,7 +2817,9 @@ public:
             std::sort(prev_begin, begin, [&sortFunctor, &selectFunctor](auto &&a, auto &&b) { return sortFunctor(selectFunctor(a), selectFunctor(b)); });
         }
 
-        return relinx_object_ordered<Iterator, SelectFunctor>(std::move(_ordered_values), std::forward<SelectFunctor>(selectFunctor));
+        using next_relinx_type = relinx_object_ordered<base, Iterator, SelectFunctor>;
+
+        return std::make_shared<next_relinx_type>(std::enable_shared_from_this<base>::shared_from_this(), std::move(_ordered_values), std::forward<SelectFunctor>(selectFunctor));
     }
 
     template<typename SelectFunctor = std::function<value_type(const value_type&)>>
@@ -2808,7 +2842,9 @@ protected:
 template<typename Container>
 auto from(Container &&c) -> decltype(auto)
 {
-    return relinx_object<typename std::decay<decltype(std::begin(c))>::type>(std::begin(c), std::end(c));
+    using next_relinx_type = relinx_object<void, typename std::decay<decltype(std::begin(c))>::type>;
+
+    return std::make_shared<next_relinx_type>(std::shared_ptr<void>(nullptr), std::begin(c), std::end(c));
 }
 
 template <typename T>
@@ -2820,13 +2856,17 @@ auto from(std::initializer_list<T> &&i) -> decltype(auto)
 template <typename Iterator>
 auto from(Iterator &&begin, Iterator &&end) -> decltype(auto)
 {
-    return relinx_object<typename std::decay<decltype(begin)>::type>(std::forward<Iterator>(begin), std::forward<Iterator>(end));
+    using next_relinx_type = relinx_object<void, typename std::decay<decltype(begin)>::type>;
+
+    return std::make_shared<next_relinx_type>(std::shared_ptr<void>(nullptr), std::forward<Iterator>(begin), std::forward<Iterator>(end));
 }
 
 template <typename T>
 auto from(T *a, std::size_t s) -> decltype(auto)
 {
-    return relinx_object<T*>(a, a + s);
+    using next_relinx_type = relinx_object<void, T*>;
+
+    return std::make_shared<next_relinx_type>(std::shared_ptr<void>(nullptr), a, a + s);
 }
 
 /**
@@ -2847,7 +2887,9 @@ auto range(T start, std::size_t count) -> decltype(auto)
 
     std::generate(std::begin(c), std::end(c), [&start](){ return start++; });
 
-    return relinx_object<decltype(std::begin(c))>(std::move(c));
+    using next_relinx_type = relinx_object<void, decltype(std::begin(c))>;
+
+    return std::make_shared<next_relinx_type>(std::shared_ptr<void>(nullptr), std::move(c));
 }
 
 /**
@@ -2867,6 +2909,8 @@ auto repeat(T e, std::size_t count) -> decltype(auto)
 
     std::fill(std::begin(c), std::end(c), e);
 
-    return relinx_object<decltype(std::begin(c))>(std::move(c));
+    using next_relinx_type = relinx_object<void, decltype(std::begin(c))>;
+
+    return std::make_shared<next_relinx_type>(std::shared_ptr<void>(nullptr), std::move(c));
 }
 }

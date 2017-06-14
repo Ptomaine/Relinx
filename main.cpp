@@ -94,7 +94,7 @@ int main()
 
         std::list<long> t1_data = {1, 2, 3};
 
-        auto t1_res = from(t1_data).to_vector();
+        auto t1_res = from(t1_data)->to_vector();
 
         assert(typeid(t1_res) == typeid(std::vector<long>));
         assert(t1_res.size() == 3);
@@ -106,7 +106,7 @@ int main()
     { //auto where(FilterFunctor &&filterFunctor) const noexcept -> decltype(auto)
         auto start = hr_clock::now();
 
-        auto t1_res = from({0, 0, 8, 0, 8, 8, 0, 0, 0, 0, 8, 0, 8, 0, 0, 8, 0}).where([](auto &&v) { return v > 0; }).to_vector();
+        auto t1_res = from({0, 0, 8, 0, 8, 8, 0, 0, 0, 0, 8, 0, 8, 0, 0, 8, 0})->where([](auto &&v) { return v > 0; })->to_vector();
 
         assert(t1_res.size() == 6);
         assert(t1_res[0] == 8 && t1_res[1] == 8 && t1_res[2] == 8 && t1_res[3] == 8 && t1_res[4] == 8 && t1_res[5] == 8);
@@ -120,16 +120,16 @@ int main()
 
         auto start = hr_clock::now();
 
-        auto t1_res = from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}).aggregate([](auto &&a, auto &&b) { return a + b; });
+        auto t1_res = from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10})->aggregate([](auto &&a, auto &&b) { return a + b; });
         assert(t1_res == 55);
 
-        auto t2_res = from(t2_data).aggregate([](auto &&a, auto &&b) { return a + b; });
+        auto t2_res = from(t2_data)->aggregate([](auto &&a, auto &&b) { return a + b; });
         assert(t2_res == "1 2 3 4 5"s);
 
-        auto t3_res = from(t2_data).where([](auto &&i){ return i.length() == 2; }).aggregate([](auto &&a, auto &&b) { return a + b; });
+        auto t3_res = from(t2_data)->where([](auto &&i){ return i.length() == 2; })->aggregate([](auto &&a, auto &&b) { return a + b; });
         assert(t3_res == " 2 5"s);
 
-        auto t4_res = from(t4_data).aggregate([](auto &&a, auto &&b) { return a + b; });
+        auto t4_res = from(t4_data)->aggregate([](auto &&a, auto &&b) { return a + b; });
         assert(t4_res == 55);
 
         print_duration("aggregate(f):", start);
@@ -141,16 +141,16 @@ int main()
 
         auto start = hr_clock::now();
 
-        auto t1_res = from({2, 3, 4, 5, 6, 7, 8, 9, 10}).aggregate(1, [](auto &&a, auto &&b) { return a + b; });
+        auto t1_res = from({2, 3, 4, 5, 6, 7, 8, 9, 10})->aggregate(1, [](auto &&a, auto &&b) { return a + b; });
         assert(t1_res == 55);
 
-        auto t2_res = from(t2_data).aggregate("1"s, [](auto &&a, auto &&b) { return a + b; });
+        auto t2_res = from(t2_data)->aggregate("1"s, [](auto &&a, auto &&b) { return a + b; });
         assert(t2_res == "1 2 3 4 5"s);
 
-        auto t3_res = from(t2_data).where([](auto &&i){ return i.length() == 2; }).aggregate("1"s, [](auto &&a, auto &&b) { return a + b; });
+        auto t3_res = from(t2_data)->where([](auto &&i){ return i.length() == 2; })->aggregate("1"s, [](auto &&a, auto &&b) { return a + b; });
         assert(t3_res == "1 2 5"s);
 
-        auto t4_res = from(t4_data).aggregate(10, [](auto &&a, auto &&b) { return a + b; });
+        auto t4_res = from(t4_data)->aggregate(10, [](auto &&a, auto &&b) { return a + b; });
         assert(t4_res == 55);
 
         print_duration("aggregate(seed, f):", start);
@@ -162,16 +162,16 @@ int main()
 
         auto start = hr_clock::now();
 
-        auto t1_res = from({2, 3, 4, 5, 6, 7, 8, 9, 10}).aggregate(1, [](auto &&a, auto &&b) { return a + b; }, [](auto &&r) { return r * 2; });
+        auto t1_res = from({2, 3, 4, 5, 6, 7, 8, 9, 10})->aggregate(1, [](auto &&a, auto &&b) { return a + b; }, [](auto &&r) { return r * 2; });
         assert(t1_res == 110);
 
-        auto t2_res = from(t2_data).aggregate("1"s, [](auto &&a, auto &&b) { return a + b; }, [](auto &&r) { return "[" + r + "]"; });
+        auto t2_res = from(t2_data)->aggregate("1"s, [](auto &&a, auto &&b) { return a + b; }, [](auto &&r) { return "[" + r + "]"; });
         assert(t2_res == "[1 2 3 4 5]"s);
 
-        auto t3_res = from(t2_data).where([](auto &&i){ return i.length() == 2; }).aggregate("1"s, [](auto &&a, auto &&b) { return a + b; }, [](auto &&r) { return "[" + r + "]"; });
+        auto t3_res = from(t2_data)->where([](auto &&i){ return i.length() == 2; })->aggregate("1"s, [](auto &&a, auto &&b) { return a + b; }, [](auto &&r) { return "[" + r + "]"; });
         assert(t3_res == "[1 2 5]"s);
 
-        auto t4_res = from(t4_data).aggregate(10, [](auto &&a, auto &&b) { return a + b; }, [](auto &&r) { return "("s + std::to_string(r * 2.5 + .5) + ")"; });
+        auto t4_res = from(t4_data)->aggregate(10, [](auto &&a, auto &&b) { return a + b; }, [](auto &&r) { return "("s + std::to_string(r * 2.5 + .5) + ")"; });
         assert(t4_res == "(138.000000)"s);
 
         print_duration("aggregate(seed, f1, f2):", start);
@@ -180,10 +180,10 @@ int main()
     { //auto all(ConditionFunction &&conditionFunction) const -> bool
         auto start = hr_clock::now();
 
-        assert(from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}).all([](auto &&r) { return r > 0; }) == true);
-        assert(from(std::vector<int>()).all([](auto &&) { return false; }) == true);
+        assert(from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10})->all([](auto &&r) { return r > 0; }) == true);
+        assert(from(std::vector<int>())->all([](auto &&) { return false; }) == true);
 
-        auto t2_res = from({"1"s, "2"s, "3"s, "4"s, "5"s, "6"s, "7"s, "8"s, "9"s, "10"s}).all([](auto &&r) { return r.length() > 1; });
+        auto t2_res = from({"1"s, "2"s, "3"s, "4"s, "5"s, "6"s, "7"s, "8"s, "9"s, "10"s})->all([](auto &&r) { return r.length() > 1; });
         assert(t2_res == false);
 
         print_duration("all(f):", start);
@@ -192,12 +192,12 @@ int main()
     { //auto any(ConditionFunction &&conditionFunction) const -> bool
         auto start = hr_clock::now();
 
-        auto t1_res = from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}).any([](auto &&r) { return r > 5; });
+        auto t1_res = from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10})->any([](auto &&r) { return r > 5; });
         assert(t1_res == true);
 
-        auto t2_res = from({"1"s, "2"s, "3"s, "4"s, "5"s, "6"s, "7"s, "8"s, "9"s, "10"s}).any([](auto &&r) { return r.length() == 3; });
+        auto t2_res = from({"1"s, "2"s, "3"s, "4"s, "5"s, "6"s, "7"s, "8"s, "9"s, "10"s})->any([](auto &&r) { return r.length() == 3; });
         assert(t2_res == false);
-        assert(from(std::vector<int>()).any([](auto &&) { return true; }) == false);
+        assert(from(std::vector<int>())->any([](auto &&) { return true; }) == false);
 
         print_duration("any(f):", start);
     }
@@ -205,8 +205,8 @@ int main()
     { //auto any() const -> bool
         auto start = hr_clock::now();
 
-        assert(from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}).any() == true);
-        assert(from(std::vector<std::string>()).any() == false);
+        assert(from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10})->any() == true);
+        assert(from(std::vector<std::string>())->any() == false);
 
         print_duration("any():", start);
     }
@@ -214,7 +214,7 @@ int main()
     { //auto avarage(AvgFunction &&avgFunction) const -> decltype(auto)
         auto start = hr_clock::now();
 
-        assert(from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}).avarage([](auto &&r){ return r * 1.5; }) == 8.25);
+        assert(from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10})->avarage([](auto &&r){ return r * 1.5; }) == 8.25);
 
         print_duration("avarage(f):", start);
     }
@@ -222,7 +222,7 @@ int main()
     { //auto avarage() const -> decltype(auto)
         auto start = hr_clock::now();
 
-        assert(from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}).avarage() == 5);
+        assert(from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10})->avarage() == 5);
 
         print_duration("avarage():", start);
     }
@@ -235,13 +235,13 @@ int main()
 
         auto start = hr_clock::now();
 
-        auto t1_res = from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}).cast<float>();
-        auto t2_res = from({derived(), derived(), derived()}).cast<base>();
-        auto t3_res = from(t1_data).cast<base*>();
+        auto t1_res = from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10})->cast<float>();
+        auto t2_res = from({derived(), derived(), derived()})->cast<base>();
+        auto t3_res = from(t1_data)->cast<base*>();
 
-        assert(t1_res.all([](auto &&i){ return typeid(i) == typeid(float); }));
-        assert(t2_res.all([](auto &&i){ return typeid(i) == typeid(base); }));
-        assert(t3_res.all([](auto &&i){ return typeid(i) == typeid(base*); }));
+        assert(t1_res->all([](auto &&i){ return typeid(i) == typeid(float); }));
+        assert(t2_res->all([](auto &&i){ return typeid(i) == typeid(base); }));
+        assert(t3_res->all([](auto &&i){ return typeid(i) == typeid(base*); }));
 
         print_duration("cast():", start);
 
@@ -251,14 +251,14 @@ int main()
     { //auto concat(Container &&container) -> decltype(auto)
         auto start = hr_clock::now();
 
-        auto t1_res = from({1, 2, 3, 4, 5}).concat(std::list<int>{6, 7}).concat({8, 9}).concat(from({10})).to_vector();
+        auto t1_res = from({1, 2, 3, 4, 5})->concat(std::list<int>{6, 7})->concat({8, 9})->concat(from({10}))->to_vector();
         assert(t1_res.size() == 10);
         assert(t1_res[1] == 2);
         assert(t1_res[5] == 6);
         assert(t1_res[7] == 8);
         assert(t1_res[9] == 10);
 
-        auto t2_res = from({1, 2, 3, 4, 5}).concat(std::vector<int>()).to_vector();
+        auto t2_res = from({1, 2, 3, 4, 5})->concat(std::vector<int>())->to_vector();
         assert(t2_res.size() == 5);
 
         print_duration("concat(c):", start);
@@ -267,7 +267,7 @@ int main()
     { //auto contains(const value_type &value) const -> bool
         auto start = hr_clock::now();
 
-        assert(from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}).contains(5));
+        assert(from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10})->contains(5));
 
         print_duration("contains(v):", start);
     }
@@ -275,7 +275,7 @@ int main()
     { //auto contains(CompareFunction &&compareFunction) const -> bool
         auto start = hr_clock::now();
 
-        assert(from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}).contains([](auto &&i) { return i == 8; }));
+        assert(from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10})->contains([](auto &&i) { return i == 8; }));
 
         print_duration("contains(f):", start);
     }
@@ -283,7 +283,7 @@ int main()
     { //auto count() const -> std::size_t
         auto start = hr_clock::now();
 
-        assert(from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}).count() == 10);
+        assert(from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10})->count() == 10);
 
         print_duration("count():", start);
     }
@@ -291,7 +291,7 @@ int main()
     { //auto count(value_type &&value) const -> decltype(auto)
         auto start = hr_clock::now();
 
-        assert(from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 5, 9, 8}).count(5) == 2);
+        assert(from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 5, 9, 8})->count(5) == 2);
 
         print_duration("count(v):", start);
     }
@@ -299,7 +299,7 @@ int main()
     { //auto count(FilterFunction &&filterFunction) const -> decltype(auto)
         auto start = hr_clock::now();
 
-        assert(from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}).count([](auto &&i) { return i % 2; }) == 5);
+        assert(from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10})->count([](auto &&i) { return i % 2; }) == 5);
 
         print_duration("count(f):", start);
     }
@@ -309,10 +309,10 @@ int main()
 
         auto start = hr_clock::now();
 
-        auto t1_res = from(t1_data).cycle(0).to_vector();
-        auto t2_res = from(t1_data).cycle(1).to_vector();
-        auto t3_res = from(t1_data).cycle(3).to_vector();
-        auto t4_res = from(t1_data).cycle().take(5).to_vector();
+        auto t1_res = from(t1_data)->cycle(0)->to_vector();
+        auto t2_res = from(t1_data)->cycle(1)->to_vector();
+        auto t3_res = from(t1_data)->cycle(3)->to_vector();
+        auto t4_res = from(t1_data)->cycle()->take(5)->to_vector();
 
         assert(t1_res.empty());
         assert(t2_res.size() == 1 * t1_data.size() && t2_res.back() == t1_data.back());
@@ -326,14 +326,14 @@ int main()
     { //auto default_if_empty(value_type default_value = value_type()) const noexcept -> decltype(auto)
         auto start = hr_clock::now();
 
-        auto t1_data = from({1, 2, 3}).default_if_empty().to_vector();
+        auto t1_data = from({1, 2, 3})->default_if_empty()->to_vector();
         assert(t1_data.size() == 3);
 
-        auto t2_data = from({1, 2, 3}).where([](auto &&v) { return v > 100;}).default_if_empty(111).to_vector();
+        auto t2_data = from({1, 2, 3})->where([](auto &&v) { return v > 100;})->default_if_empty(111)->to_vector();
         assert(t2_data.size() == 1);
         assert(t2_data[0] == 111);
 
-        auto t3_res = from(std::vector<std::string>()).default_if_empty().to_vector();
+        auto t3_res = from(std::vector<std::string>())->default_if_empty()->to_vector();
         assert(t3_res.size() == 1);
         assert(t3_res[0] == std::string());
 
@@ -353,9 +353,9 @@ int main()
             Customer{5, "Anna"s, "Poo"s, 23}
         };
 
-        auto t1_res = from(t1_data).distinct().to_vector();
-        auto t2_res = from(t1_data).distinct([](auto &&i) { return i.LastName; }).to_vector(); //LastName as a key
-        auto t3_res = from(t1_data).distinct([](auto &&i) { return std::hash<std::string>()(i.LastName) ^ (std::hash<uint32_t>()(i.Age) << 1); }).to_vector(); //LastName and Age as a key
+        auto t1_res = from(t1_data)->distinct()->to_vector();
+        auto t2_res = from(t1_data)->distinct([](auto &&i) { return i.LastName; })->to_vector(); //LastName as a key
+        auto t3_res = from(t1_data)->distinct([](auto &&i) { return std::hash<std::string>()(i.LastName) ^ (std::hash<uint32_t>()(i.Age) << 1); })->to_vector(); //LastName and Age as a key
 
         assert(t1_res.size() == t1_data.size());
         assert(t1_res[3].FirstName == "Alex"s);
@@ -364,7 +364,7 @@ int main()
         assert(t3_res.size() == 4);
         assert(t3_res[1].LastName == "Doe"s && t3_res[1].Age == 35);
 
-        assert(from({1, 2, 3, 3, 2, 1}).distinct().count() == 3);
+        assert(from({1, 2, 3, 3, 2, 1})->distinct()->count() == 3);
 
         print_duration("distinct(f):", start);
     }
@@ -374,9 +374,9 @@ int main()
 
         auto t1_data = {0, 1, 2, 3, 4, 5, 6, 7, 8};
 
-        assert(from(t1_data).element_at(0) == 0);
-        assert(from(t1_data).element_at(3) == 3);
-        assert(from(t1_data).element_at(8) == 8);
+        assert(from(t1_data)->element_at(0) == 0);
+        assert(from(t1_data)->element_at(3) == 3);
+        assert(from(t1_data)->element_at(8) == 8);
 
         print_duration("element_at(idx):", start);
     }
@@ -386,11 +386,11 @@ int main()
 
         auto t1_data = {0, 1, 2, 3, 4, 5, 6, 7, 8};
 
-        assert(from(t1_data).element_at_or_default(0) == 0);
-        assert(from(t1_data).element_at_or_default(3) == 3);
-        assert(from(t1_data).element_at_or_default(8) == 8);
-        assert(from(t1_data).element_at_or_default(10) == 0);
-        assert(from(t1_data).element_at_or_default(100, -1) == -1);
+        assert(from(t1_data)->element_at_or_default(0) == 0);
+        assert(from(t1_data)->element_at_or_default(3) == 3);
+        assert(from(t1_data)->element_at_or_default(8) == 8);
+        assert(from(t1_data)->element_at_or_default(10) == 0);
+        assert(from(t1_data)->element_at_or_default(100, -1) == -1);
 
         print_duration("element_at_or_default(idx, dv):", start);
     }
@@ -398,7 +398,7 @@ int main()
     { //auto except(Container &&container, std::function<bool(const value_type&, const value_type&)> &&compareFunction = [](auto &&a, auto &&b) { return a == b; }) const noexcept -> decltype(auto)
         auto start = hr_clock::now();
 
-        assert(from({0, 1, 2, 3, 4, 5, 6, 7, 8}).except({2, 3, 4, 5}).to_string() == "01678");
+        assert(from({0, 1, 2, 3, 4, 5, 6, 7, 8})->except({2, 3, 4, 5})->to_string() == "01678");
 
         print_duration("except:", start);
     }
@@ -406,12 +406,12 @@ int main()
     { //auto first(ConditionFunction &&conditionFunction) const -> value_type
         auto start = hr_clock::now();
 
-        assert(from({0, 1, 2, 3, 4, 5, 6, 7, 8}).first([](auto &&v) { return v & 1; }) == 1);
-        assert(from({5, 6, 7, 8}).first([](auto &&v) { return v == 7; }) == 7);
+        assert(from({0, 1, 2, 3, 4, 5, 6, 7, 8})->first([](auto &&v) { return v & 1; }) == 1);
+        assert(from({5, 6, 7, 8})->first([](auto &&v) { return v == 7; }) == 7);
 
         try
         {
-            from({0, 1, 2}).first([](auto &&v) { return v == 10;});
+            from({0, 1, 2})->first([](auto &&v) { return v == 10;});
 
             assert(false);
         }
@@ -426,11 +426,11 @@ int main()
     { //auto first() const -> value_type
         auto start = hr_clock::now();
 
-        assert(from({5, 6, 7, 8}).first() == 5);
+        assert(from({5, 6, 7, 8})->first() == 5);
 
         try
         {
-            from(std::vector<int>()).first();
+            from(std::vector<int>())->first();
 
             assert(false);
         }
@@ -445,8 +445,8 @@ int main()
     { //auto first_or_default(ConditionFunction &&conditionFunction, value_type default_value = value_type()) const noexcept -> decltype(auto)
         auto start = hr_clock::now();
 
-        assert(from({0, 1, 2, 3, 4, 5, 6, 7, 8}).first_or_default([](auto &&v) { return v == 100; }) == 0);
-        assert(from({5, 6, 7, 8}).first_or_default([](auto &&v) { return v == 100; }, 100) == 100);
+        assert(from({0, 1, 2, 3, 4, 5, 6, 7, 8})->first_or_default([](auto &&v) { return v == 100; }) == 0);
+        assert(from({5, 6, 7, 8})->first_or_default([](auto &&v) { return v == 100; }, 100) == 100);
 
         print_duration("first_or_default(f):", start);
     }
@@ -454,9 +454,9 @@ int main()
     { //auto first_or_default(value_type default_value = value_type()) const noexcept -> decltype(auto)
         auto start = hr_clock::now();
 
-        assert(from({7, 8}).first_or_default() == 7);
-        assert(from(std::vector<int>()).first_or_default() == 0);
-        assert(from(std::vector<int>()).first_or_default(111) == 111);
+        assert(from({7, 8})->first_or_default() == 7);
+        assert(from(std::vector<int>())->first_or_default() == 0);
+        assert(from(std::vector<int>())->first_or_default(111) == 111);
 
         print_duration("first_or_default():", start);
     }
@@ -464,7 +464,7 @@ int main()
     { //auto range(T start, std::size_t count) -> decltype(auto)
         auto start = hr_clock::now();
 
-        assert(range(0, 9).to_string() == "012345678"s);
+        assert(range(0, 9)->to_string() == "012345678"s);
 
         print_duration("range(v, v):", start);
     }
@@ -472,9 +472,9 @@ int main()
     { //auto repeat(T e, std::size_t count) -> decltype(auto)
         auto start = hr_clock::now();
 
-        assert(repeat(0, 9).to_string() == "000000000"s);
-        assert(repeat('0', 9).to_string() == "000000000"s);
-        assert(repeat("abc"s, 5).to_string() == "abcabcabcabcabc"s);
+        assert(repeat(0, 9)->to_string() == "000000000"s);
+        assert(repeat('0', 9)->to_string() == "000000000"s);
+        assert(repeat("abc"s, 5)->to_string() == "abcabcabcabcabc"s);
 
         print_duration("repeat(v, v):", start);
     }
@@ -485,9 +485,9 @@ int main()
         std::ostringstream ostr;
         auto t1_data = range(0, 9);
 
-        t1_data.for_each([&ostr](auto &&v) { ostr << v; });
+        t1_data->for_each([&ostr](auto &&v) { ostr << v; });
 
-        assert(ostr.str() == t1_data.to_string());
+        assert(ostr.str() == t1_data->to_string());
 
         print_duration("for_each(f):", start);
     }
@@ -505,11 +505,11 @@ int main()
             Customer{5, "Anna"s, "Poo"s, 23}
         };
 
-        auto t1_res = from(t1_data).order_by([](auto &&v) { return v.Age; }).to_vector();
+        auto t1_res = from(t1_data)->order_by([](auto &&v) { return v.Age; })->to_vector();
 
         assert(t1_res[0].FirstName == "Alex"s);
         assert(t1_res[5].FirstName == "Sam"s);
-        assert(from({3, 2, 1}).order_by().to_string() == "123"s);
+        assert(from({3, 2, 1})->order_by()->to_string() == "123"s);
 
         print_duration("order_by(f):", start);
     }
@@ -527,11 +527,11 @@ int main()
             Customer{5, "Anna"s, "Poo"s, 23}
         };
 
-        auto t1_res = from(t1_data).order_by_descending([](auto &&v) { return v.Age; }).to_vector();
+        auto t1_res = from(t1_data)->order_by_descending([](auto &&v) { return v.Age; })->to_vector();
 
         assert(t1_res[0].FirstName == "Sam"s);
         assert(t1_res[5].FirstName == "Alex"s);
-        assert(from({1, 2, 3}).order_by_descending().to_string() == "321"s);
+        assert(from({1, 2, 3})->order_by_descending()->to_string() == "321"s);
 
         print_duration("order_by_descending(f):", start);
     }
@@ -542,9 +542,9 @@ int main()
         std::ostringstream ostr;
         auto t1_data = range(0, 9);
 
-        t1_data.for_each_i([&ostr](auto &&v, auto &&idx) { ostr << idx << v; });
+        t1_data->for_each_i([&ostr](auto &&v, auto &&idx) { ostr << idx << v; });
 
-        assert(ostr.str() == t1_data.concat(range(0, 9)).order_by().to_string());
+        assert(ostr.str() == t1_data->concat(range(0, 9))->order_by()->to_string());
 
         print_duration("for_each_i(f):", start);
     }
@@ -556,11 +556,11 @@ int main()
         std::vector<int> t2_data = {1, 2, 3, 4, 5, 6};
         std::vector<int> t3_data;
 
-        assert(from(t1_data).single([](auto &&v) { return !(v % 2); }));
+        assert(from(t1_data)->single([](auto &&v) { return !(v % 2); }));
 
         try
         {
-            from(t2_data).single([](auto &&v) { return !(v % 2); });
+            from(t2_data)->single([](auto &&v) { return !(v % 2); });
 
             assert(false);
         }
@@ -571,7 +571,7 @@ int main()
 
         try
         {
-            from(t3_data).single([](auto &&v) { return !(v % 2); });
+            from(t3_data)->single([](auto &&v) { return !(v % 2); });
 
             assert(false);
         }
@@ -596,16 +596,16 @@ int main()
             Customer{5, "Anna"s, "Poo"s, 23}
         };
 
-        auto t1_res = from(t1_data).group_by([](auto &&i) { return i.LastName; });
-        auto t2_res = from(t1_data).group_by([](auto &&i) { return std::hash<std::string>()(i.LastName) ^ (std::hash<std::string>()(i.FirstName) << 1); });
+        auto t1_res = from(t1_data)->group_by([](auto &&i) { return i.LastName; });
+        auto t2_res = from(t1_data)->group_by([](auto &&i) { return std::hash<std::string>()(i.LastName) ^ (std::hash<std::string>()(i.FirstName) << 1); });
 
-        assert(t1_res.count() == 2);
-        assert(t1_res.first([](auto &&i){ return i.first == "Doe"s; }).second.size() == 4);
-        assert(t1_res.first([](auto &&i){ return i.first == "Poo"s; }).second.size() == 2);
-        assert(from(t1_res.first([](auto &&i){ return i.first == "Doe"s; }).second).contains([](auto &&i) { return i.FirstName == "Sam"s; }));
-        assert(from(t1_res.first([](auto &&i){ return i.first == "Poo"s; }).second).contains([](auto &&i) { return i.FirstName == "Anna"s; }));
-        assert(t2_res.single([](auto &&i){ return i.first == (std::hash<std::string>()("Doe"s) ^ (std::hash<std::string>()("John"s) << 1)); }).second.size() == 2);
-        assert(t2_res.single([](auto &&i){ return i.first == (std::hash<std::string>()("Doe"s) ^ (std::hash<std::string>()("Sam"s) << 1)); }).second.size() == 2);
+        assert(t1_res->count() == 2);
+        assert(t1_res->first([](auto &&i){ return i.first == "Doe"s; }).second.size() == 4);
+        assert(t1_res->first([](auto &&i){ return i.first == "Poo"s; }).second.size() == 2);
+        assert(from(t1_res->first([](auto &&i){ return i.first == "Doe"s; }).second)->contains([](auto &&i) { return i.FirstName == "Sam"s; }));
+        assert(from(t1_res->first([](auto &&i){ return i.first == "Poo"s; }).second)->contains([](auto &&i) { return i.FirstName == "Anna"s; }));
+        assert(t2_res->single([](auto &&i){ return i.first == (std::hash<std::string>()("Doe"s) ^ (std::hash<std::string>()("John"s) << 1)); }).second.size() == 2);
+        assert(t2_res->single([](auto &&i){ return i.first == (std::hash<std::string>()("Doe"s) ^ (std::hash<std::string>()("Sam"s) << 1)); }).second.size() == 2);
 
         print_duration("group_by(f):", start);
     }
@@ -633,36 +633,36 @@ int main()
             Pet{3, "Fluffy"s}
         };
 
-        auto t1_res = from(t1_data).group_join(t2_data,
+        auto t1_res = from(t1_data)->group_join(t2_data,
                                                [](auto &&i) { return i.Id; },
                                                [](auto &&i) { return i.OwnerId; },
                                                [](auto &&key, auto &&values)
                                                {
                                                    return std::make_pair(key.FirstName + " "s + key.LastName,
-                                                                         from(values).
-                                                                         select([](auto &&i){ return i.NickName; }).
-                                                                         order_by().
+                                                                         from(values)->
+                                                                         select([](auto &&i){ return i.NickName; })->
+                                                                         order_by()->
                                                                          to_string(","s));
                                                }
-                                               ).order_by([](auto &&p) { return p.first; }).to_vector();
+                                               )->order_by([](auto &&p) { return p.first; })->to_vector();
 
         assert(t1_res.size() == 3);
         assert(t1_res[0].first == "Alex Poo"s && t1_res[0].second == "Bob,Bubble,Fluffy"s);
         assert(t1_res[1].first == "John Doe"s && t1_res[1].second == "Kitty,Spotty"s);
         assert(t1_res[2].first == "Sam Doe"s  && t1_res[2].second == "Sparky"s);
 
-        auto t2_res = from(t1_data).group_join(t2_data,
+        auto t2_res = from(t1_data)->group_join(t2_data,
                                                [](auto &&i) { return i.Id; },
                                                [](auto &&i) { return i.OwnerId; },
                                                [](auto &&key, auto &&values)
                                                {
                                                    return std::make_pair(key.FirstName + " "s + key.LastName,
-                                                                         from(values).
-                                                                         select([](auto &&i){ return i.NickName; }).
-                                                                         order_by().
+                                                                         from(values)->
+                                                                         select([](auto &&i){ return i.NickName; })->
+                                                                         order_by()->
                                                                          to_string(","s));
                                                }
-                                               , true).order_by([](auto &&p) { return p.first; }).to_vector();
+                                               , true)->order_by([](auto &&p) { return p.first; })->to_vector();
 
         assert(t2_res.size() == 6);
         assert(t2_res[1].second == std::string() && t2_res[3].second == std::string() && t2_res[5].second == std::string());
@@ -673,7 +673,7 @@ int main()
     { //auto intersect_with(Container &&container, std::function<bool(const value_type&, const value_type&)> &&compareFunction = [](auto &&a, auto &&b) { return a == b; }) const -> decltype(auto)
         auto start = hr_clock::now();
 
-        auto t1_res = from({1, 2, 3, 7, 8}).intersect_with({2, 3, 5, 6, 7}).to_string();
+        auto t1_res = from({1, 2, 3, 7, 8})->intersect_with({2, 3, 5, 6, 7})->to_string();
 
         assert(t1_res == "237"s);
 
@@ -693,7 +693,7 @@ int main()
             Customer{5, "Anna"s, "Poo"s, 23}
         };
 
-        auto t1_res = from(t1_data).order_by([](auto &&v) { return v.Age; }).then_by([](auto &&v) { return v.FirstName; }).to_vector();
+        auto t1_res = from(t1_data)->order_by([](auto &&v) { return v.Age; })->then_by([](auto &&v) { return v.FirstName; })->to_vector();
 
         assert(t1_res[0].FirstName == "Anna"s);
         assert(t1_res[1].FirstName == "Alex"s);
@@ -718,7 +718,7 @@ int main()
             Customer{5, "Anna"s, "Poo"s, 23}
         };
 
-        auto t1_res = from(t1_data).order_by_descending([](auto &&v) { return v.Age; }).then_by_descending([](auto &&v) { return v.FirstName; }).to_vector();
+        auto t1_res = from(t1_data)->order_by_descending([](auto &&v) { return v.Age; })->then_by_descending([](auto &&v) { return v.FirstName; })->to_vector();
 
         assert(t1_res[0].FirstName == "Sam"s);
         assert(t1_res[1].FirstName == "Sam"s);
@@ -753,15 +753,15 @@ int main()
             Pet{3, "Fluffy"s}
         };
 
-        auto t1_res = from(t1_data).join(t2_data,
+        auto t1_res = from(t1_data)->join(t2_data,
                                        [](auto &&i) { return i.Id; },
                                        [](auto &&i) { return i.OwnerId; },
                                        [](auto &&left, auto &&right)
                                        {
                                            return std::make_pair(left.FirstName + " "s + left.LastName, right.NickName);
                                        }
-                                       ).order_by([](auto &&p) { return p.first; }).
-                                            then_by([](auto &&p) { return p.second; }).to_vector();
+                                       )->order_by([](auto &&p) { return p.first; })->
+                                            then_by([](auto &&p) { return p.second; })->to_vector();
 
         assert(t1_res.size() == 6);
         assert(t1_res[0].first == "Alex Poo"s && t1_res[0].second == "Bob"s);
@@ -771,15 +771,15 @@ int main()
         assert(t1_res[4].first == "John Doe"s && t1_res[4].second == "Spotty"s);
         assert(t1_res[5].first == "Sam Doe"s  && t1_res[5].second == "Sparky"s);
 
-        auto t2_res = from(t1_data).join(t2_data,
+        auto t2_res = from(t1_data)->join(t2_data,
                                        [](auto &&i) { return i.Id; },
                                        [](auto &&i) { return i.OwnerId; },
                                        [](auto &&left, auto &&right)
                                        {
                                            return std::make_pair(left.FirstName + " "s + left.LastName, right.NickName);
                                        }
-                                       , true).order_by([](auto &&p) { return p.first; }).
-                                            then_by([](auto &&p) { return p.second; }).to_vector();
+                                       , true)->order_by([](auto &&p) { return p.first; })->
+                                            then_by([](auto &&p) { return p.second; })->to_vector();
 
         assert(t2_res.size() == 9);
         assert(t2_res[3].second == std::string() && t2_res[4].second == std::string() && t2_res[7].second == std::string());
@@ -790,12 +790,12 @@ int main()
     { //auto last(ConditionFunction &&conditionFunction) const -> value_type
         auto start = hr_clock::now();
 
-        assert(from({0, 1, 2, 3, 4, 5, 6, 7, 8}).last([](auto &&v) { return v & 1; }) == 7);
-        assert(from({5, 6, 7, 8, 5, 6, 8}).last([](auto &&v) { return v < 8; }) == 6);
+        assert(from({0, 1, 2, 3, 4, 5, 6, 7, 8})->last([](auto &&v) { return v & 1; }) == 7);
+        assert(from({5, 6, 7, 8, 5, 6, 8})->last([](auto &&v) { return v < 8; }) == 6);
 
         try
         {
-            from({0, 1, 2}).last([](auto &&v) { return v == 10;});
+            from({0, 1, 2})->last([](auto &&v) { return v == 10;});
 
             assert(false);
         }
@@ -810,11 +810,11 @@ int main()
     { //auto last() const -> value_type
         auto start = hr_clock::now();
 
-        assert(from({5, 6, 7, 8}).last() == 8);
+        assert(from({5, 6, 7, 8})->last() == 8);
 
         try
         {
-            from(std::vector<int>()).last();
+            from(std::vector<int>())->last();
 
             assert(false);
         }
@@ -829,8 +829,8 @@ int main()
     { //auto last_or_default(ConditionFunction &&conditionFunction, value_type default_value = value_type()) const noexcept -> decltype(auto)
         auto start = hr_clock::now();
 
-        assert(from({0, 1, 2, 3, 4, 5, 6, 7, 8}).last_or_default([](auto &&v) { return v == 100; }) == 0);
-        assert(from({5, 6, 7, 8}).last_or_default([](auto &&v) { return v == 100; }, 100) == 100);
+        assert(from({0, 1, 2, 3, 4, 5, 6, 7, 8})->last_or_default([](auto &&v) { return v == 100; }) == 0);
+        assert(from({5, 6, 7, 8})->last_or_default([](auto &&v) { return v == 100; }, 100) == 100);
 
         print_duration("last_or_default(f):", start);
     }
@@ -838,9 +838,9 @@ int main()
     { //auto last_or_default(value_type default_value = value_type()) const noexcept -> decltype(auto)
         auto start = hr_clock::now();
 
-        assert(from({7, 8}).last_or_default() == 8);
-        assert(from(std::vector<int>()).last_or_default() == 0);
-        assert(from(std::vector<int>()).last_or_default(111) == 111);
+        assert(from({7, 8})->last_or_default() == 8);
+        assert(from(std::vector<int>())->last_or_default() == 0);
+        assert(from(std::vector<int>())->last_or_default(111) == 111);
 
         print_duration("last_or_default():", start);
     }
@@ -858,11 +858,11 @@ int main()
             Customer{5, "Anna"s, "Poo"s, 23}
         };
 
-        assert(from(t1_data).max([](auto &&v) { return v.Age; }) == 45);
+        assert(from(t1_data)->max([](auto &&v) { return v.Age; }) == 45);
 
         try
         {
-            from(std::vector<Customer>()).max([](auto &&v) { return v.Age; });
+            from(std::vector<Customer>())->max([](auto &&v) { return v.Age; });
 
             assert(false);
         }
@@ -877,11 +877,11 @@ int main()
     { //auto max() const -> decltype(auto)
         auto start = hr_clock::now();
 
-        assert(from({1, 6, 2, 3, 8, 7, 6, 9, 2, 3, 8}).max() == 9);
+        assert(from({1, 6, 2, 3, 8, 7, 6, 9, 2, 3, 8})->max() == 9);
 
         try
         {
-            from(std::vector<int>()).max();
+            from(std::vector<int>())->max();
 
             assert(false);
         }
@@ -906,11 +906,11 @@ int main()
             Customer{5, "Anna"s, "Poo"s, 23}
         };
 
-        assert(from(t1_data).min([](auto &&v) { return v.Age; }) == 23);
+        assert(from(t1_data)->min([](auto &&v) { return v.Age; }) == 23);
 
         try
         {
-            from(std::vector<Customer>()).min([](auto &&v) { return v.Age; });
+            from(std::vector<Customer>())->min([](auto &&v) { return v.Age; });
 
             assert(false);
         }
@@ -925,11 +925,11 @@ int main()
     { //auto min() const -> decltype(auto)
         auto start = hr_clock::now();
 
-        assert(from({1, 6, 2, 3, 8, 7, 6, 9, 0, 2, 3, 8}).min() == 0);
+        assert(from({1, 6, 2, 3, 8, 7, 6, 9, 0, 2, 3, 8})->min() == 0);
 
         try
         {
-            from(std::vector<int>()).min();
+            from(std::vector<int>())->min();
 
             assert(false);
         }
@@ -944,9 +944,9 @@ int main()
     { //auto none(ConditionFunction &&conditionFunction) const -> decltype(auto)
         auto start = hr_clock::now();
 
-        assert(from({0, 1, 2, 3, 4, 5, 6, 7, 8}).none([](auto &&v) { return v == 100; }) == true);
-        assert(from({0, 1, 2, 3, 4, 5, 6, 7, 8}).none([](auto &&v) { return v == 5; }) == false);
-        assert(from(std::vector<int>()).none([](auto &&v) { return v == 5; }) == true);
+        assert(from({0, 1, 2, 3, 4, 5, 6, 7, 8})->none([](auto &&v) { return v == 100; }) == true);
+        assert(from({0, 1, 2, 3, 4, 5, 6, 7, 8})->none([](auto &&v) { return v == 5; }) == false);
+        assert(from(std::vector<int>())->none([](auto &&v) { return v == 5; }) == true);
 
         print_duration("none(f):", start);
     }
@@ -960,10 +960,10 @@ int main()
 
         auto start = hr_clock::now();
 
-        auto t1_res = from(t1_data).of_type<derived2*>();
+        auto t1_res = from(t1_data)->of_type<derived2*>();
 
-        assert(t1_res.all([](auto &&i){ return typeid(i) == typeid(derived2*); }));
-        assert(t1_res.count() == 2);
+        assert(t1_res->all([](auto &&i){ return typeid(i) == typeid(derived2*); }));
+        assert(t1_res->count() == 2);
 
         print_duration("of_type():", start);
 
@@ -973,8 +973,8 @@ int main()
     { //auto reverse() const -> decltype(auto)
         auto start = hr_clock::now();
 
-        assert(from({1, 2, 3}).reverse().to_string() == "321"s);
-        assert(from({"c"s, "b"s, "a"s}).reverse().to_string() == "abc"s);
+        assert(from({1, 2, 3})->reverse()->to_string() == "321"s);
+        assert(from({"c"s, "b"s, "a"s})->reverse()->to_string() == "abc"s);
 
         print_duration("reverse(f):", start);
     }
@@ -983,8 +983,8 @@ int main()
         auto start = hr_clock::now();
 
         auto t0_data = {1, 2, 3};
-        auto t1_data = from(t0_data).select([](auto &&v) { return std::to_string(v); }).to_vector();
-        auto t2_data = from(t0_data).select([](auto &&v) { return float(v); }).to_vector();
+        auto t1_data = from(t0_data)->select([](auto &&v) { return std::to_string(v); })->to_vector();
+        auto t2_data = from(t0_data)->select([](auto &&v) { return float(v); })->to_vector();
 
         assert(t1_data.size() == 3);
         assert(typeid(decltype(t1_data)()) == typeid(std::vector<std::string>()));
@@ -1005,8 +1005,8 @@ int main()
         auto start = hr_clock::now();
 
         auto t0_data = {1, 2, 3};
-        auto t1_data = from(t0_data).select_i([](auto &&v, auto &&idx) { return std::to_string(idx) + std::to_string(v); }).to_vector();
-        auto t2_data = from(t0_data).select_i([](auto &&v, auto &&idx) { return std::make_pair(idx, v); }).to_vector();
+        auto t1_data = from(t0_data)->select_i([](auto &&v, auto &&idx) { return std::to_string(idx) + std::to_string(v); })->to_vector();
+        auto t2_data = from(t0_data)->select_i([](auto &&v, auto &&idx) { return std::make_pair(idx, v); })->to_vector();
 
         assert(t1_data.size() == 3);
         assert(typeid(decltype(t1_data)()) == typeid(std::vector<std::string>()));
@@ -1035,7 +1035,7 @@ int main()
             {9, 10}
         };
 
-        auto t1_res = from(t1_data).select_many([](auto &&v) { return v; }).to_string();
+        auto t1_res = from(t1_data)->select_many([](auto &&v) { return v; })->to_string();
 
         assert(t1_res == "12345678910"s);
 
@@ -1054,7 +1054,7 @@ int main()
             {9, 10}
         };
 
-        auto t1_res = from(t1_data).select_many_i([](auto &&v, auto &&idx) { std::ostringstream oss; oss << from(v).to_string() << idx; return std::vector<std::string>({oss.str()}); }).to_string();
+        auto t1_res = from(t1_data)->select_many_i([](auto &&v, auto &&idx) { std::ostringstream oss; oss << from(v)->to_string() << idx; return std::vector<std::string>({oss.str()}); })->to_string();
 
         assert(t1_res == "1230451627839104"s);
 
@@ -1068,9 +1068,9 @@ int main()
         std::vector<int> t2_data = {1, 2, 3};
         std::vector<int> t3_data = {3, 2, 1};
 
-        assert(from({1, 2, 3}).sequence_equal({1, 2, 3}));
-        assert(from(t1_data).sequence_equal(t2_data));
-        assert(from(t2_data).sequence_equal(t3_data) == false);
+        assert(from({1, 2, 3})->sequence_equal({1, 2, 3}));
+        assert(from(t1_data)->sequence_equal(t2_data));
+        assert(from(t2_data)->sequence_equal(t3_data) == false);
 
         print_duration("sequence_equal(c):", start);
     }
@@ -1108,8 +1108,8 @@ int main()
             Customer{2, "John"s, "Doe"s, 25}
         };
 
-        assert(from(t1_data).sequence_equal(t2_data, [](auto &&t1, auto &&t2){ return t1.Id == t2.Id && t1.FirstName == t2.FirstName; }));
-        assert(from(t2_data).sequence_equal(t3_data, [](auto &&t1, auto &&t2){ return t1.Id == t2.Id && t1.FirstName == t2.FirstName; }) == false);
+        assert(from(t1_data)->sequence_equal(t2_data, [](auto &&t1, auto &&t2){ return t1.Id == t2.Id && t1.FirstName == t2.FirstName; }));
+        assert(from(t2_data)->sequence_equal(t3_data, [](auto &&t1, auto &&t2){ return t1.Id == t2.Id && t1.FirstName == t2.FirstName; }) == false);
 
         print_duration("sequence_equal(c, f):", start);
     }
@@ -1121,11 +1121,11 @@ int main()
         std::vector<int> t2_data = {1, 2};
         std::vector<int> t3_data;
 
-        assert(from(t1_data).single());
+        assert(from(t1_data)->single());
 
         try
         {
-            from(t2_data).single();
+            from(t2_data)->single();
 
             assert(false);
         }
@@ -1136,7 +1136,7 @@ int main()
 
         try
         {
-            from(t3_data).single();
+            from(t3_data)->single();
 
             assert(false);
         }
@@ -1156,15 +1156,15 @@ int main()
         std::vector<int> t3_data;
         std::vector<int> t4_data = {2, 4, 6};
 
-        assert(from(t1_data).single_or_default([](auto &&v) { return !(v % 2); }) == 2);
-        assert(from(t2_data).single_or_default([](auto &&v) { return !(v % 2); }) == 0);
-        assert(from(t2_data).single_or_default([](auto &&v) { return !(v % 2); }, -1) == -1);
-        assert(from(t3_data).single_or_default([](auto &&v) { return !(v % 2); }) == 0);
-        assert(from(t3_data).single_or_default([](auto &&v) { return !(v % 2); }, 888) == 888);
+        assert(from(t1_data)->single_or_default([](auto &&v) { return !(v % 2); }) == 2);
+        assert(from(t2_data)->single_or_default([](auto &&v) { return !(v % 2); }) == 0);
+        assert(from(t2_data)->single_or_default([](auto &&v) { return !(v % 2); }, -1) == -1);
+        assert(from(t3_data)->single_or_default([](auto &&v) { return !(v % 2); }) == 0);
+        assert(from(t3_data)->single_or_default([](auto &&v) { return !(v % 2); }, 888) == 888);
 
         try
         {
-            from(t4_data).single_or_default([](auto &&v) { return !(v % 2); });
+            from(t4_data)->single_or_default([](auto &&v) { return !(v % 2); });
 
             assert(false);
         }
@@ -1183,12 +1183,12 @@ int main()
         std::vector<int> t2_data = {1, 2};
         std::vector<int> t3_data;
 
-        assert(from(t1_data).single_or_default() == 1);
-        assert(from(t1_data).single_or_default(111) == 1);
+        assert(from(t1_data)->single_or_default() == 1);
+        assert(from(t1_data)->single_or_default(111) == 1);
 
         try
         {
-            from(t2_data).single_or_default();
+            from(t2_data)->single_or_default();
 
             assert(false);
         }
@@ -1197,8 +1197,8 @@ int main()
             if (e.what() == "single_or_default"s) assert(true);
         }
 
-        assert(from(t3_data).single_or_default() == 0);
-        assert(from(t3_data).single_or_default(555) == 555);
+        assert(from(t3_data)->single_or_default() == 0);
+        assert(from(t3_data)->single_or_default(555) == 555);
 
         print_duration("single_or_default():", start);
     }
@@ -1206,8 +1206,8 @@ int main()
     { //auto skip(std::size_t skip) -> decltype(auto)
         auto start = hr_clock::now();
 
-        assert(from({1, 2, 3, 4, 5, 6, 7, 8}).skip(5).to_string() == "678"s);
-        assert(from({1, 2, 3, 4, 5, 6, 7, 8}).skip(100).any() == false);
+        assert(from({1, 2, 3, 4, 5, 6, 7, 8})->skip(5)->to_string() == "678"s);
+        assert(from({1, 2, 3, 4, 5, 6, 7, 8})->skip(100)->any() == false);
 
         print_duration("skip(v):", start);
     }
@@ -1215,8 +1215,8 @@ int main()
     { //auto skip_while(SkipFunctor skipFunctor) -> decltype(auto)
         auto start = hr_clock::now();
 
-        assert(from({1, 2, 3, 4, 5, 6, 7, 8}).skip_while([](auto &&v){ return v < 6; }).to_string() == "678"s);
-        assert(from({1, 2, 3, 4, 5, 6, 7, 8}).skip_while([](auto &&v){ return v < 100; }).any() == false);
+        assert(from({1, 2, 3, 4, 5, 6, 7, 8})->skip_while([](auto &&v){ return v < 6; })->to_string() == "678"s);
+        assert(from({1, 2, 3, 4, 5, 6, 7, 8})->skip_while([](auto &&v){ return v < 100; })->any() == false);
 
         print_duration("skip_while(f):", start);
     }
@@ -1224,8 +1224,8 @@ int main()
     { //auto skip_while_i(SkipFunctor skipFunctor) -> decltype(auto)
         auto start = hr_clock::now();
 
-        assert(from({1, 2, 3, 4, 5, 6, 7, 8}).skip_while_i([](auto &&v, auto &&i){ return v + i < 6; }).to_string() == "45678"s);
-        assert(from({1, 2, 3, 4, 5, 6, 7, 8}).skip_while_i([](auto &&v, auto &&i){ return v * i < 15; }).to_string() == "5678"s);
+        assert(from({1, 2, 3, 4, 5, 6, 7, 8})->skip_while_i([](auto &&v, auto &&i){ return v + i < 6; })->to_string() == "45678"s);
+        assert(from({1, 2, 3, 4, 5, 6, 7, 8})->skip_while_i([](auto &&v, auto &&i){ return v * i < 15; })->to_string() == "5678"s);
 
         print_duration("skip_while_i(f):", start);
     }
@@ -1245,8 +1245,8 @@ int main()
 
         std::vector<Customer> t2_data;
 
-        assert(from(t1_data).sum([](auto &&i) { return i.Age; }) == 176);
-        assert(from(t2_data).sum([](auto &&i) { return i.Age; }) == 0);
+        assert(from(t1_data)->sum([](auto &&i) { return i.Age; }) == 176);
+        assert(from(t2_data)->sum([](auto &&i) { return i.Age; }) == 0);
 
         print_duration("sum(f):", start);
     }
@@ -1257,10 +1257,10 @@ int main()
         std::vector<int> t1_data;
         std::vector<std::string> t2_data = { "1.5"s, "3.2"s, "15.38"s, "2.79"s, "7.1"s, "5.55"s };
 
-        assert(from({1, 2, 3, 4, 5, 6, 7, 8}).sum() == 36);
-        assert(from({10, 10, 10, 10, 10, 10, 10, 10, 10, 5, 5}).sum() == 100);
-        assert(from(t1_data).sum() == 0);
-        assert(from(t2_data).sum() == from(t2_data).to_string());
+        assert(from({1, 2, 3, 4, 5, 6, 7, 8})->sum() == 36);
+        assert(from({10, 10, 10, 10, 10, 10, 10, 10, 10, 5, 5})->sum() == 100);
+        assert(from(t1_data)->sum() == 0);
+        assert(from(t2_data)->sum() == from(t2_data)->to_string());
 
         print_duration("sum():", start);
     }
@@ -1270,11 +1270,11 @@ int main()
 
         std::vector<int> t1_data;
 
-        assert(from({1, 2, 3, 4, 5, 6, 7, 8}).take(5).to_string() == "12345"s);
-        assert(from({1, 2, 3, 4, 5, 6, 7, 8}).take(0).any() == false);
-        assert(from(t1_data).take(10).any() == false);
-        assert(from({1, 2, 3, 4, 5, 6, 7, 8}).take(-1).to_string() == "12345678"s);
-        assert(from({1, 2, 3, 4, 5, 6, 7, 8}).take(10).to_string() == "12345678"s);
+        assert(from({1, 2, 3, 4, 5, 6, 7, 8})->take(5)->to_string() == "12345"s);
+        assert(from({1, 2, 3, 4, 5, 6, 7, 8})->take(0)->any() == false);
+        assert(from(t1_data)->take(10)->any() == false);
+        assert(from({1, 2, 3, 4, 5, 6, 7, 8})->take(-1)->to_string() == "12345678"s);
+        assert(from({1, 2, 3, 4, 5, 6, 7, 8})->take(10)->to_string() == "12345678"s);
 
         print_duration("take(v):", start);
     }
@@ -1284,10 +1284,10 @@ int main()
 
         std::vector<int> t1_data;
 
-        assert(from({1, 2, 3, 4, 5, 6, 7, 8}).take_while([](auto &&v) { return v < 6; }).to_string() == "12345"s);
-        assert(from({1, 2, 3, 4, 5, 6, 7, 8}).take_while([](auto &&v) { return v > 100; }).any() == false);
-        assert(from(t1_data).take_while([](auto &&) { return true; }).any() == false);
-        assert(from({1, 2, 3, 4, 5, 6, 7, 8}).take_while([](auto &&v) { return v < 100; }).to_string() == "12345678"s);
+        assert(from({1, 2, 3, 4, 5, 6, 7, 8})->take_while([](auto &&v) { return v < 6; })->to_string() == "12345"s);
+        assert(from({1, 2, 3, 4, 5, 6, 7, 8})->take_while([](auto &&v) { return v > 100; })->any() == false);
+        assert(from(t1_data)->take_while([](auto &&) { return true; })->any() == false);
+        assert(from({1, 2, 3, 4, 5, 6, 7, 8})->take_while([](auto &&v) { return v < 100; })->to_string() == "12345678"s);
 
         print_duration("take_while(f):", start);
     }
@@ -1297,7 +1297,7 @@ int main()
 
         std::vector<int> t1_data;
 
-        assert(from({"1"s, "2"s, "3"s, "4"s, "5"s, "6"s, "7"s, "8"s}).take_while_i([](auto &&, auto &&idx) { return idx < 6; }).to_string() == "123456"s);
+        assert(from({"1"s, "2"s, "3"s, "4"s, "5"s, "6"s, "7"s, "8"s})->take_while_i([](auto &&, auto &&idx) { return idx < 6; })->to_string() == "123456"s);
 
         print_duration("take_while_i(f):", start);
     }
@@ -1306,8 +1306,8 @@ int main()
         auto start = hr_clock::now();
 
         std::initializer_list<int> t1_data = {1, 2, 3};
-        auto t1_res = from(t1_data).to_container<std::set<int>>();
-        auto t2_res = from(t1_data).to_container<std::forward_list<int>>();
+        auto t1_res = from(t1_data)->to_container<std::set<int>>();
+        auto t2_res = from(t1_data)->to_container<std::forward_list<int>>();
 
         assert(typeid(t1_res) == typeid(std::set<int>));
         assert(t1_res.size() == t1_data.size());
@@ -1322,11 +1322,11 @@ int main()
 
         std::vector<long> t1_data = {1, 1, 1};
 
-        auto t1_res = from(t1_data).to_list();
+        auto t1_res = from(t1_data)->to_list();
 
         assert(typeid(t1_res) == typeid(std::list<long>));
-        assert(from(t1_res).count() == 3);
-        assert(from(t1_res).all([](auto &&v) { return v == 1; }));
+        assert(from(t1_res)->count() == 3);
+        assert(from(t1_res)->all([](auto &&v) { return v == 1; }));
 
         print_duration("to_list():", start);
     }
@@ -1336,7 +1336,7 @@ int main()
 
         std::vector<long> t1_data = {1, 2, 3};
 
-        auto t1_res = from(t1_data).to_map([](auto &&v) {  return v; }, [](auto &&v) { return double(v * 2); });
+        auto t1_res = from(t1_data)->to_map([](auto &&v) {  return v; }, [](auto &&v) { return double(v * 2); });
 
         assert(typeid(t1_res) == typeid(default_map<long, double>));
         assert(t1_res.size() == 3);
@@ -1352,7 +1352,7 @@ int main()
 
         std::vector<long> t1_data = {1, 2, 3, 1, 2, 3, 3};
 
-        auto t1_res = from(t1_data).to_multimap([](auto &&v) {  return v; }, [](auto &&v) { return double(v * 2); });
+        auto t1_res = from(t1_data)->to_multimap([](auto &&v) {  return v; }, [](auto &&v) { return double(v * 2); });
 
         assert(typeid(t1_res) == typeid(default_multimap<long, double>));
         assert(t1_res.size() == 7);
@@ -1361,9 +1361,9 @@ int main()
         auto r2_res = t1_res.equal_range(2);
         auto r3_res = t1_res.equal_range(3);
 
-        assert(from(r1_res.first, r1_res.second).select([](auto &&v) { return v.second; }).to_string() == "22"s);
-        assert(from(r2_res.first, r2_res.second).select([](auto &&v) { return v.second; }).to_string() == "44"s);
-        assert(from(r3_res.first, r3_res.second).select([](auto &&v) { return v.second; }).to_string() == "666"s);
+        assert(from(r1_res.first, r1_res.second)->select([](auto &&v) { return v.second; })->to_string() == "22"s);
+        assert(from(r2_res.first, r2_res.second)->select([](auto &&v) { return v.second; })->to_string() == "44"s);
+        assert(from(r3_res.first, r3_res.second)->select([](auto &&v) { return v.second; })->to_string() == "666"s);
 
         print_duration("to_multimap(f, f):", start);
     }
@@ -1371,7 +1371,7 @@ int main()
     { //auto union_with(Container &&container, KeyFunctor &&keyFunctor = [](auto &&v) { return v; }) const noexcept -> decltype(auto)
         auto start = hr_clock::now();
 
-        assert(from({1, 2, 3, 1, 1, 2, 3, 3, 3, 2, 2, 1}).union_with({1, 2, 3, 5, 7, 8, 9, 0}).order_by().to_string() == "01235789"s);
+        assert(from({1, 2, 3, 1, 1, 2, 3, 3, 3, 2, 2, 1})->union_with({1, 2, 3, 5, 7, 8, 9, 0})->order_by()->to_string() == "01235789"s);
 
         print_duration("union_with(c, f):", start);
     }
@@ -1379,7 +1379,7 @@ int main()
     { //auto where_i(FilterFunctor &&filterFunctor) const noexcept -> decltype(auto)
         auto start = hr_clock::now();
 
-        auto t1_res = from({0, 0, 8, 0, 8, 8, 0, 0, 0, 0, 8, 0, 8, 0, 0, 8, 0}).where_i([](auto &&v, auto &&idx) { return v > 0 && idx < 8; }).to_vector();
+        auto t1_res = from({0, 0, 8, 0, 8, 8, 0, 0, 0, 0, 8, 0, 8, 0, 0, 8, 0})->where_i([](auto &&v, auto &&idx) { return v > 0 && idx < 8; })->to_vector();
 
         assert(t1_res.size() == 3);
         assert(t1_res[0] == 8 && t1_res[1] == 8 && t1_res[2] == 8);
@@ -1390,7 +1390,7 @@ int main()
     { //auto zip(Container &&container, ResultFunctor &&resultFunctor) const noexcept -> decltype(auto)
         auto start = hr_clock::now();
 
-        auto t1_res = from({1, 2, 3, 4, 5}).zip({"one"s, "two"s, "three"s}, [](auto &&a, auto &&b) { return std::to_string(a) + " " + b; }).to_vector();
+        auto t1_res = from({1, 2, 3, 4, 5})->zip({"one"s, "two"s, "three"s}, [](auto &&a, auto &&b) { return std::to_string(a) + " " + b; })->to_vector();
 
         assert(t1_res.size() == 3);
         assert(t1_res[0] == "1 one"s);
