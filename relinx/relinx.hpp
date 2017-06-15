@@ -286,7 +286,7 @@ public:
         return !(*this == s);
     }
 
-    auto operator*() const -> const value_type&
+    auto operator*() -> const value_type&
     {
         return *_begin;
     }
@@ -1058,7 +1058,8 @@ public:
     auto operator =(const relinx_object &) -> relinx_object & = delete;
     relinx_object(relinx_object &&) = default;
 
-    relinx_object(std::shared_ptr<ParentRelinxType> &&parent_relinx_object_ptr, iterator_type begin, iterator_type end) noexcept : _begin(begin), _end(end), _parent_relinx_object_ptr(std::forward<std::shared_ptr<ParentRelinxType>>(parent_relinx_object_ptr)) { }
+    relinx_object(std::shared_ptr<ParentRelinxType> &&parent_relinx_object_ptr, const iterator_type &begin, const iterator_type &end) noexcept : _begin(begin), _end(end), _parent_relinx_object_ptr(std::forward<std::shared_ptr<ParentRelinxType>>(parent_relinx_object_ptr)) { }
+    relinx_object(std::shared_ptr<ParentRelinxType> &&parent_relinx_object_ptr, iterator_type &&begin, iterator_type &&end) noexcept : _begin(std::forward<iterator_type>(begin)), _end(std::forward<iterator_type>(end)), _parent_relinx_object_ptr(std::forward<std::shared_ptr<ParentRelinxType>>(parent_relinx_object_ptr)) { }
     relinx_object(std::shared_ptr<ParentRelinxType> &&parent_relinx_object_ptr, ContainerType &&container) noexcept : _container(std::forward<ContainerType>(container)), _begin(std::begin(_container)), _end(std::end(_container)), _parent_relinx_object_ptr(std::forward<std::shared_ptr<ParentRelinxType>>(parent_relinx_object_ptr)) { }
 
     ~relinx_object() = default;
@@ -2495,7 +2496,7 @@ public:
         using adapter_type = limit_iterator_adapter<iterator_type, std::function<bool(const value_type&)>>;
         using next_relinx_type = relinx_object<self_type, adapter_type, ContainerType>;
 
-        return _indexer = limit, std::make_shared<next_relinx_type>(std::enable_shared_from_this<self_type>::shared_from_this(), adapter_type(_begin, _end, [this](auto &&){ return _indexer-- > 0; }), adapter_type(_end, _end, nullptr));
+        return _indexer = limit, std::make_shared<next_relinx_type>(std::enable_shared_from_this<self_type>::shared_from_this(), adapter_type(_begin, _end, [this](auto &&){ return _indexer--; }), adapter_type(_end, _end, nullptr));
     }
 
     /** \brief Returns elements from a sequence as long as a specified condition is true.
