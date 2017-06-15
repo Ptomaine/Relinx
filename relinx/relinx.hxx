@@ -3,7 +3,7 @@
 /*
 MIT License
 
-Copyright (c) 2016 Arlen Keshabyan (arlen.albert@gmail.com)
+Copyright (c) 2017 Arlen Keshabyan (arlen.albert@gmail.com)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -1091,7 +1091,7 @@ public:
 
         \return An aggregated value.
 
-        Example of usage: \code auto result = from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}).aggregate([](auto &&aggregated_value, auto &&current_value) { return aggregated_value + current_value; }); \endcode
+        Example of usage: \code auto result = from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10})->aggregate([](auto &&aggregated_value, auto &&current_value) { return aggregated_value + current_value; }); \endcode
     */
     template<typename AggregateFunctor>
     auto aggregate(AggregateFunctor &&aggregateFunctor) const -> decltype(auto)
@@ -1119,7 +1119,7 @@ public:
 
         \return An aggregated value.
 
-        Example of usage: \code auto result = from({2, 3, 4, 5, 6, 7, 8, 9, 10}).aggregate(1, [](auto &&aggregated_value, auto &&current_value) { return aggregated_value + current_value; }); \endcode
+        Example of usage: \code auto result = from({2, 3, 4, 5, 6, 7, 8, 9, 10})->aggregate(1, [](auto &&aggregated_value, auto &&current_value) { return aggregated_value + current_value; }); \endcode
     */
     template<typename SeedType, typename AggregateFunctor>
     auto aggregate(SeedType &&seed, AggregateFunctor &&aggregateFunctor) const -> decltype(auto)
@@ -1143,7 +1143,7 @@ public:
 
         \return A transformed aggregated value.
 
-        Example: \code auto result = from({9, 8, 7, 6, 5, 4, 3, 2, 1}).aggregate(10, [](auto &&a, auto &&b) { return a + b; }, [](auto &&r) { return "("s + std::to_string(r * 2.5 + .5) + ")"; }); \endcode
+        Example: \code auto result = from({9, 8, 7, 6, 5, 4, 3, 2, 1})->aggregate(10, [](auto &&a, auto &&b) { return a + b; }, [](auto &&r) { return "("s + std::to_string(r * 2.5 + .5) + ")"; }); \endcode
     */
     template<typename SeedType, typename AggregateFunctor, typename ResultSelector>
     auto aggregate(SeedType &&seed, AggregateFunctor &&aggregateFunctor, ResultSelector &&resultSelector) const -> decltype(auto)
@@ -1204,7 +1204,7 @@ public:
 
         \return A computed avarage value.
 
-        Example: \code auto result = from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}).avarage([](auto &&r){ return r * 1.5; }); \endcode the result is 8.25
+        Example: \code auto result = from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10})->avarage([](auto &&r){ return r * 1.5; }); \endcode the result is 8.25
     */
     template<typename AvgFunctor>
     auto avarage(AvgFunctor &&avgFunctor) const noexcept -> decltype(auto)
@@ -1242,9 +1242,9 @@ public:
 
         auto data = {new derived(), new derived(), new derived()};
 
-        auto result1 = from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}).cast<float>();
-        auto result2 = from({derived(), derived(), derived()}).cast<base>();
-        auto result3 = from(data).cast<base*>();
+        auto result1 = from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10})->cast<float>();
+        auto result2 = from({derived(), derived(), derived()})->cast<base>();
+        auto result3 = from(data)->cast<base*>();
 
         for(auto &&i : data){ delete i; };
 
@@ -1254,7 +1254,7 @@ public:
 
             std::list<base*> data = {new derived(), new derived2(), new derived(), new derived(), new derived2()};
 
-            auto result = from(data).select([](auto &&i) { return dynamic_cast<derived2*>(i); }).where([](auto &&v) { return v != nullptr; });
+            auto result = from(data)->select([](auto &&i) { return dynamic_cast<derived2*>(i); })->where([](auto &&v) { return v != nullptr; });
             // result now contains two derived2 objects
 
             for(auto &&i : data){ delete i; };
@@ -1314,7 +1314,7 @@ public:
 
         \return returns true if an element was found.
 
-        Example: \code auto result = from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}).contains(5); \endcode
+        Example: \code auto result = from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10})->contains(5); \endcode
     */
     auto contains(value_type &&value) const noexcept -> bool
     {
@@ -1330,7 +1330,7 @@ public:
 
         \return returns true if an element found that satisfies a condition.
 
-        Example: \code auto result = from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}).contains([](auto &&i) { return i % 2 == 0; }); \endcode checks whether a sequence contains an even number
+        Example: \code auto result = from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10})->contains([](auto &&i) { return i % 2 == 0; }); \endcode checks whether a sequence contains an even number
     */
     template<typename CompareFunctor>
     auto contains(CompareFunctor &&compareFunctor) const noexcept -> bool
@@ -1345,7 +1345,7 @@ public:
 
         \return The number of elements in the input sequence.
 
-        Example: \code auto result = from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}).count(); \endcode return 10 as the result.
+        Example: \code auto result = from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10})->count(); \endcode return 10 as the result.
     */
     auto count() const noexcept -> decltype(auto)
     {
@@ -1367,7 +1367,7 @@ public:
 
         \return Returns the number of elements in a sequence that equal to a specified value.
 
-        Example: \code auto result = from({1, 2, 3, 1, 2, 3, 1, 2, 3}).count(1); \endcode counts number of 1 and returns 3 as the result.
+        Example: \code auto result = from({1, 2, 3, 1, 2, 3, 1, 2, 3})->count(1); \endcode counts number of 1 and returns 3 as the result.
     */
     auto count(value_type &&value) const noexcept -> decltype(auto)
     {
@@ -1383,7 +1383,7 @@ public:
 
         \return A number that represents how many elements in the sequence satisfy the condition in the filtering functor.
 
-        Example: \code auto result = from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10}).count([](auto &&i) { return i % 2 == 0; }); \endcode counts even numbers and returns 5 as the result.
+        Example: \code auto result = from({1, 2, 3, 4, 5, 6, 7, 8, 9, 10})->count([](auto &&i) { return i % 2 == 0; }); \endcode counts even numbers and returns 5 as the result.
     */
     template<typename ConditionFunctor>
     auto count(ConditionFunctor &&conditionFunctor) const noexcept -> decltype(auto)
@@ -1404,13 +1404,13 @@ public:
         Member functions that do not rely on a finite sequence are relatively safe to use. Be careful, cycle is infinite by default!
 
         Example: \code
-            auto res1 = from({1, 2, 3}).cycle().reverse().take(5);                //result: it loops forever since reverse tries to consume the whole sequence at once!
+            auto res1 = from({1, 2, 3})->cycle()->reverse()->take(5);                //result: it loops forever since reverse tries to consume the whole sequence at once!
             // or
-            auto res2 = from({1, 2, 3}).cycle().order_by_descending().take(10);   //result: it loops forever since order_by_descending tries to consume the whole sequence at once!
+            auto res2 = from({1, 2, 3})->cycle()->order_by_descending()->take(10);   //result: it loops forever since order_by_descending tries to consume the whole sequence at once!
 
             // you should use it like this:
-            auto res1 = from({1, 2, 3}).cycle().take(5).reverse();                        //result: {2, 1, 3, 2, 1}
-            auto res2 = from({1, 2, 3}).cycle().skip(3).take(10).order_by_descending();   //result: {3, 3, 3, 2, 2, 2, 1, 1, 1, 1}
+            auto res1 = from({1, 2, 3})->cycle()->take(5)->reverse();                        //result: {2, 1, 3, 2, 1}
+            auto res2 = from({1, 2, 3})->cycle()->skip(3)->take(10)->order_by_descending();   //result: {3, 3, 3, 2, 2, 2, 1, 1, 1, 1}
             \endcode
 
         \param times A number of times it has to cycle the whole input sequence. A negative value indicates to cycle forever. Be careful, cycle is infinite by default!
@@ -1420,12 +1420,12 @@ public:
         \return A relinx_object that is cycled.
 
         Example: \code
-            auto res1 = from({1, 2, 3}).cycle(0);                //result: {}
-            auto res2 = from({1, 2, 3}).cycle(1);                //result: {1, 2, 3}
-            auto res3 = from({1, 2, 3}).cycle(3);                //result: {1, 2, 3, 1, 2, 3, 1, 2, 3}
-            auto res4 = from({1, 2, 3}).cycle(-1).take(3);       //result: {1, 2, 3}
-            auto res5 = from({1, 2, 3}).cycle().take(7);         //result: {1, 2, 3, 1, 2, 3, 1}
-            auto res6 = from({1, 2, 3}).cycle().skip(2).take(5); //result: {3, 1, 2, 3, 1}
+            auto res1 = from({1, 2, 3})->cycle(0);                //result: {}
+            auto res2 = from({1, 2, 3})->cycle(1);                //result: {1, 2, 3}
+            auto res3 = from({1, 2, 3})-cycle(3);                //result: {1, 2, 3, 1, 2, 3, 1, 2, 3}
+            auto res4 = from({1, 2, 3})->cycle(-1)->take(3);       //result: {1, 2, 3}
+            auto res5 = from({1, 2, 3})->cycle()->take(7);         //result: {1, 2, 3, 1, 2, 3, 1}
+            auto res6 = from({1, 2, 3})->cycle()->skip(2)->take(5); //result: {3, 1, 2, 3, 1}
             \endcode
     */
     auto cycle(std::ptrdiff_t times = -1) noexcept -> decltype(auto)
@@ -2236,7 +2236,7 @@ public:
             {9, 10}
         };
 
-        auto t1_res = from(t1_data).select_many([](auto &&v) { return v; }).to_string();
+        auto t1_res = from(t1_data)->select_many([](auto &&v) { return v; })->to_string();
 
         assert(t1_res == "12345678910"s);
 
@@ -2730,8 +2730,8 @@ public:
 
 protected:
     mutable std::size_t _indexer = 0;
-    mutable ContainerType _container;
-    mutable ContainerType _def_val_container;
+    ContainerType _container;
+    ContainerType _def_val_container;
     mutable value_type _default_value;
 
     Iterator _begin;
@@ -2777,14 +2777,26 @@ public:
         {
         }
 
+    ~relinx_object_ordered() = default;
+
+    auto begin() const noexcept -> decltype(auto)
+    {
+        return std::begin(_ordered_values);
+    }
+
+    auto end() const noexcept -> decltype(auto)
+    {
+        return std::end(_ordered_values);
+    }
+
     template<typename SelectFunctor, typename SortFunctor>
     auto order_by(SelectFunctor &&selectFunctor, SortFunctor &&sortFunctor) -> decltype(auto)
     {
         std::sort(std::begin(_ordered_values), std::end(_ordered_values), [&selectFunctor, &sortFunctor](auto &&a, auto &&b) { return sortFunctor(selectFunctor(a), selectFunctor(b)); });
 
-        using next_relinx_type = relinx_object_ordered<base, Iterator, SelectFunctor>;
+        using next_relinx_type = relinx_object_ordered<self_type, Iterator, SelectFunctor>;
 
-        return std::make_shared<next_relinx_type>(std::enable_shared_from_this<base>::shared_from_this(), std::move(_ordered_values), std::forward<SelectFunctor>(selectFunctor));
+        return std::make_shared<next_relinx_type>(std::static_pointer_cast<self_type>(std::enable_shared_from_this<base>::shared_from_this()), std::move(_ordered_values), std::forward<SelectFunctor>(selectFunctor));
     }
 
     template<typename SelectFunctor = std::function<value_type(const value_type&)>>
@@ -2817,9 +2829,9 @@ public:
             std::sort(prev_begin, begin, [&sortFunctor, &selectFunctor](auto &&a, auto &&b) { return sortFunctor(selectFunctor(a), selectFunctor(b)); });
         }
 
-        using next_relinx_type = relinx_object_ordered<base, Iterator, SelectFunctor>;
+        using next_relinx_type = relinx_object_ordered<self_type, Iterator, SelectFunctor>;
 
-        return std::make_shared<next_relinx_type>(std::enable_shared_from_this<base>::shared_from_this(), std::move(_ordered_values), std::forward<SelectFunctor>(selectFunctor));
+        return std::make_shared<next_relinx_type>(std::static_pointer_cast<self_type>(std::enable_shared_from_this<base>::shared_from_this()), std::move(_ordered_values), std::forward<SelectFunctor>(selectFunctor));
     }
 
     template<typename SelectFunctor = std::function<value_type(const value_type&)>>
@@ -2840,17 +2852,49 @@ protected:
 };
 
 template<typename Container>
-auto from(Container &&c) -> decltype(auto)
+auto from(const Container &c) -> decltype(auto)
 {
     using next_relinx_type = relinx_object<void, typename std::decay<decltype(std::begin(c))>::type>;
 
     return std::make_shared<next_relinx_type>(std::shared_ptr<void>(nullptr), std::begin(c), std::end(c));
 }
 
+template<typename Container>
+auto from(Container &c) -> decltype(auto)
+{
+    const Container &const_alias { c };
+
+    return from<Container>(const_alias);
+}
+
+template<typename Container>
+auto from(Container &&c) -> decltype(auto)
+{
+    using next_relinx_type = relinx_object<void, typename std::decay<decltype(std::begin(c))>::type, typename std::decay<decltype(c)>::type>;
+
+    return std::make_shared<next_relinx_type>(std::shared_ptr<void>(nullptr), std::forward<typename std::decay<decltype(c)>::type>(c));
+}
+
+template <typename T>
+auto from(const std::initializer_list<T> &i) -> decltype(auto)
+{
+    return from<std::initializer_list<T>>(i);
+}
+
+template <typename T>
+auto from(std::initializer_list<T> &i) -> decltype(auto)
+{
+    return from<std::initializer_list<T>>(i);
+}
+
 template <typename T>
 auto from(std::initializer_list<T> &&i) -> decltype(auto)
 {
-    return from<std::initializer_list<T>>(std::forward<std::initializer_list<T>>(i));
+    default_container<T> result(std::size(i));
+
+    std::move(std::begin(i), std::end(i), std::begin(result));
+
+    return from<default_container<T>>(std::move(result));
 }
 
 template <typename Iterator>
