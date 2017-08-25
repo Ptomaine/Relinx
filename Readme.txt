@@ -1,3 +1,6 @@
+THIS LIBRARY IS A PART OF NSTD PROJECT NOW.
+CAN BE FOUND HERE [https://github.com/Ptomaine/nstd]
+
 The library uses the C++14 standard.
 
 The code was successfully tested on the following compilers:
